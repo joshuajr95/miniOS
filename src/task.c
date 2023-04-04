@@ -10,7 +10,7 @@
 
 void task_table_init(task_table_t *table)
 {
-
+    
 }
 
 void schedule_next_task(task_table_t *table)

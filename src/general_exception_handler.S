@@ -7,6 +7,7 @@
 
 #include <global_structs.h>
 
+
 #define CAUSE_REGISTER_MASK 0x00000076
 
 #define TLB_MODIFICATION_EXCEPTION_CODE 1
@@ -136,7 +137,7 @@ Data_Bus_Error:
 # The syscall exception handler code uses a jump address table
 # to jump to the correct syscall handler.
 Syscall_Exception:
-    jal handle_syscall
+    jal syscall_dispatch
 
 
 
