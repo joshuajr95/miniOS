@@ -11,12 +11,15 @@
 
 #include <stdint.h>
 
-#include "kdefs.h"
+#include <kdefs.h>
 
 
 typedef enum
 {
-    CREATED, RUNNING, IDLE, TERMINATED
+    CREATED,
+    RUNNING,
+    IDLE,
+    TERMINATED
 
 } task_state_t;
 
@@ -47,6 +50,7 @@ typedef struct TASK_CONTROL_BLOCK
     // storage for register data when task is context switched off CPU
     // program counter is at index 0 since register 0 is a constant
     uint32_t regs[NUM_REGS];
+    uint32_t program_counter;
 
 } task_control_block_t;
 

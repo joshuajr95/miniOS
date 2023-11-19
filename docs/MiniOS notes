@@ -1,0 +1,87 @@
+MINI OS
+
+
+CP0 (CoProcessor 0) is used for kernel level stuff like context switch and such
+
+Debug mode (probly useful for debugging kernel) is used by EJTAG. It is set if the 
+DM bit in the Debug register in CP0 is set.
+
+
+Kernel mode is set if the DM bit in the Debug register in CP0 is cleared and if:
+	- the KSU field in the CP0 Status register has value 0b00	OR
+	- the EXL bit in the CP0 Status register is 1			OR
+	- the ERL bit in the CP0 Status register is 1
+
+Processor enters Kernel mode at startup or because of an interrupt, exception, or error.
+Processor leaves kernel mode during exceptions by executing the ERET instruction.
+
+
+Exception handler must save:
+	- contents of the registers
+	- current operating mode
+	- interrupt status (enabled or disabled)
+
+Resume execution of the user program at the address saved in the EPC (Exception Program Counter)
+or possibly not depending on if the currently executing instruction was in the branch delay
+slot. The two can be distinguished by reading the BD bit in the Cause register. This all only
+works for precise exceptions. Bus errors and CP2 exceptions are not guaranteed to be precise.
+
+
+Interrupts in the M4K core have 3 modes:
+	- Interrupt compatibility mode
+	- Vectored Interrupt mode which is set by the VInt bit in the Config3 register
+	- External Interrupt Controller (EIC) mode which allows control of interrupt vectoring
+		to be given to an external interupt controller and is set by the VEIC bit in
+		the Config3 register. It is also set externally by the SI_EICPresent input.
+
+
+The CP0 register EBase contains the base address of the exception vector table.
+The general exception vector has address 0x180 and the special interrupt vector has address 0x200
+
+An IRQ may be deasserted before handler runs. Should check for IRQ assertion bit and if no longer
+asserted simply execute ERET.
+
+Exception vector locations are computed as follows for vectored interrupts: EBASE + vector offset.
+Vector offset is computed as 0x200 + vector number*vector spacing.
+Vector number is computed by processor or given by external interrupt controller.
+Vector spacing is given by the IntCtlVs bit.
+
+General exception processing is vectored to EBASE + 0x180. Many different exceptions are considered
+to be a general exception, and are all vectored to the same location. They are distinguished by
+the ExcCode field in the Cause register. Examples include:
+	Interrupt			0x00
+	TLB load exception		0x02
+	Syscall exception		0x08
+	Breakpoint exception		0x09
+
+
+Default exception base address		0xBFC00000
+
+
+Exception offset locations:
+----------------------------------------------------
+	Reset or soft reset		0x000
+	Non-maskable Interrupt		0x000
+	General exception		0x180
+	Interrupt			0x200 + vector number*vector spacing
+	
+
+
+PIC32 is probably in External Interrupt Controller (EIC) mode since it uses an external interrupt controller.
+Thus need to read more about that.
+
+
+TODO
+---------------------------
+1. Need for bootloader and startup code.
+2. Figure out general exception handling.
+3. Figure out context switch.
+4. Figure out syscall.
+5. Sort out which code goes in the exception handling vs context switch vs syscall. Probably the
+	saving of the registers does not need to be done in the general exception handling.
+6. Figure out address binding and global memory vs stack, etc.
+7. Read more about MIPS assembly coding: .data, .code, etc.
+8. Read about linker scripts, compilations, and stuff for the build process.
+
+
+

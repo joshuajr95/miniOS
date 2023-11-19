@@ -8,12 +8,12 @@
 
 #include <syscall.h>
 
-# .data 
-# syscall_table: .word S0, S1, S2
+.kdata 
+syscall_table: .word S0, S1, S2
 
 
 
-.text
+.ktext
 
 syscall_dispatch:
     la $t0, syscall_table
