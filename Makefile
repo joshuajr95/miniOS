@@ -1,8 +1,9 @@
 # Makefile used for building the MiniOS
 
-SOURCE_DIR =		src
+SOURCE_DIR =		kernel
 INCLUDE_DIR =		include
 BUILD_DIR =			build
+API_DIR =			api
 
 PREPROCESS_DIR = 	$(BUILD_DIR)/preprocess
 OBJ_DIR =			$(BUILD_DIR)/obj
@@ -60,7 +61,6 @@ $(C_PREPROCESS): $(PREPROCESS_DIR)/%.i: $(SOURCE_DIR)/%.c
 
 $(ASM_PREPROCESS): $(PREPROCESS_DIR)/%.s: $(SOURCE_DIR)/%.S
 	$(CC) -E $< -o $@
-
 
 
 $(BUILD_DIR)/$(TARGET): $(C_OBJS) $(ASM_OBJS)
