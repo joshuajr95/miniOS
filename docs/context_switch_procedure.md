@@ -1,5 +1,5 @@
-Author: Joshua Jacobs-Rebhun
-Date: April 3, 2023
+
+# Context Switch Procedure
 
 
 This file describes the context switch procedure in the miniOS operating system.
