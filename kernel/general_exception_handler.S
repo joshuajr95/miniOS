@@ -75,7 +75,6 @@ general_exception_handler:
     addi $k1, $k1, REGISTER_SIZE
 	sw $a3, 0($k1)
 
-
     addi $k1, $k1, REGISTER_SIZE
 	sw $t0, 0($k1)
 
@@ -99,7 +98,6 @@ general_exception_handler:
 
     addi $k1, $k1, REGISTER_SIZE
 	sw $t7, 0($k1)
-
 
     addi $k1, $k1, REGISTER_SIZE
 	sw $s0, 0($k1)
@@ -125,13 +123,11 @@ general_exception_handler:
     addi $k1, $k1, REGISTER_SIZE
 	sw $s7, 0($k1)
 
-
     addi $k1, $k1, REGISTER_SIZE
 	sw $t8, 0($k1)
 
     addi $k1, $k1, REGISTER_SIZE
 	sw $t9, 0($k1)
-
 
     addi $k1, $k1, REGISTER_SIZE
 	sw $gp, 0($k1)
@@ -152,7 +148,7 @@ general_exception_handler:
                                                     # used to index into exceptionTable, which is word-aligned
                                                     # and thus would need to convert exception number to byte
                                                     # address by shifting left by 2 bits again.
-    
+
 
     # exception jump table implementation
     la $t0, exception_table                         # load the base address of the exception table
@@ -161,7 +157,7 @@ general_exception_handler:
     jr $t1                                          # jump to the address of the exception handler
 
 
-# I don't think I need these but will check again tomorrow
+
 E0:
     j end_exception_block
 
@@ -172,7 +168,7 @@ E2:
     j TLB_Load_Exception
 
 E3:
-    j TLB_Store_Exception 
+    j TLB_Store_Exception
 
 E4:
     j Address_Load_Exception
@@ -237,13 +233,11 @@ end_exception_block:
     addi $k1, $k1, REGISTER_SIZE
 	lw $at, 0($k1)
 
-
     addi $k1, $k1, REGISTER_SIZE
 	lw $v0, 0($k1)
 
     addi $k1, $k1, REGISTER_SIZE
 	lw $v1, 0($k1)
-
 
     addi $k1, $k1, REGISTER_SIZE
 	lw $a0, 0($k1)
@@ -256,7 +250,6 @@ end_exception_block:
 
     addi $k1, $k1, REGISTER_SIZE
 	lw $a3, 0($k1)
-
 
     addi $k1, $k1, REGISTER_SIZE
 	lw $t0, 0($k1)
@@ -282,7 +275,6 @@ end_exception_block:
     addi $k1, $k1, REGISTER_SIZE
 	lw $t7, 0($k1)
 
-
     addi $k1, $k1, REGISTER_SIZE
 	lw $s0, 0($k1)
 
@@ -307,13 +299,11 @@ end_exception_block:
     addi $k1, $k1, REGISTER_SIZE
 	lw $s7, 0($k1)
 
-
     addi $k1, $k1, REGISTER_SIZE
 	lw $t8, 0($k1)
 
     addi $k1, $k1, REGISTER_SIZE
 	lw $t9, 0($k1)
-
 
     addi $k1, $k1, REGISTER_SIZE
 	lw $gp, 0($k1)

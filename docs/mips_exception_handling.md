@@ -49,10 +49,17 @@ are dispatched to offsets that are described below.
 #### External Interrupt Controller (EIC) Mode
 
 External interrupt controller mode is the mode used in the MIPS M4K core in the PIC32MX795F512L microcontroller
-and is similar to vectored interrupt mode. In this mode, the prioritization of interrupts is handled by an
-External Interrupt Controller (EIC), and this EIC supplies the processor with the interrupt vector and priority
-level. The processor then takes care of dispatching the interrupt to the proper offset for the interrupt handler.
-The interrupt vector numbers for EIC mode range from 1 to 63 (inclusive), and 0 is used for encoding "no interrupt".
+and is similar to vectored interrupt mode. This mode is in effect if the following are all true:
+
+- Config3~VEIC~ = 1
+- IntCtl~VS~ != 0
+- Cause~IV~ = 1
+- Status~BEV~ = 0
+
+In this mode, the prioritization of interrupts is handled by an External Interrupt Controller (EIC), and this
+EIC supplies the processor with the interrupt vector and priority level. The processor then takes care of
+dispatching the interrupt to the proper offset for the interrupt handler. The interrupt vector numbers for EIC
+mode range from 1 to 63 (inclusive), and 0 is used for encoding "no interrupt".
 
 
 ### Interrupt/Exception Vector Locations
@@ -90,7 +97,7 @@ The vectorOffset part of the above equation is one of the following:
 - 0x000 (TLB refill)
 - 0x100 (cache error)
 - 0x180 (general exception, e.g. syscall)
-- vectorOffset = 0x200 + vectorNumber * vectorSpacing
+- vectorOffset = 0x200 + vectorNumber * vectorSpacing (interrupts)
 
 The vector spacing is controlled through the value stored in IntCtl~VS~ in Coprocessor 0.
 
