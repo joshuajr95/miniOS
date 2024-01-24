@@ -36,8 +36,7 @@
 # changed it to .kdata since will be in kernel memory
 .kdata
 
-# do I need extra layer of indirection or can I just put 
-# exception handler addresses here directly?
+# Extra layer of indirection is unnecessary
 exception_table: .word E0, E1, E2, E3, E4, E5, E6, E7, E8
 
 
@@ -47,99 +46,38 @@ exception_table: .word E0, E1, E2, E3, E4, E5, E6, E7, E8
 general_exception_handler:
     
     # load base address of current task's registers into kernel register
-    la $k0, current_task_register_base              
+    la $k0, current_task_register_base
     lw $k1, 0($k0)
+
+
+    # save the caller-saved registers, return address,
+    # and stack, frame, and global data pointers
     
+    sw $t0, T0_BYTE_OFFSET($k1)
+    sw $t1, T1_BYTE_OFFSET($k1)
+    sw $t2, T2_BYTE_OFFSET($k1)
+    sw $t3, T3_BYTE_OFFSET($k1)
+    sw $t4, T4_BYTE_OFFSET($k1)
+    sw $t5, T5_BYTE_OFFSET($k1)
+    sw $t6, T6_BYTE_OFFSET($k1)
+    sw $t7, T7_BYTE_OFFSET($k1)
+    sw $t8, T8_BYTE_OFFSET($k1)
+    sw $t9, T9_BYTE_OFFSET($k1)
 
-    # save registers to the current tasks context
-    # by iterating over the registers and incrementing
-    # the pointer to the regs array by REGISTER_SIZE each time
-    addi $k1, $k1, REGISTER_SIZE
-    sw $at, 0($k1)
+    sw $sp, SP_BYTE_OFFSET($k1)
+    sw $fp, FP_BYTE_OFFSET($k1)
+    sw $gp, GP_BYTE_OFFSET($k1)
+    sw $ra, RA_BYTE_OFFSET($k1)
 
-    addi $k1, $k1, REGISTER_SIZE
-    sw $v0, 0($k1)
+    
+    # load the kernel context
+    la $k0, kernel_register_base
+    lw $k1, 0($k0)
 
-    addi $k1, $k1, REGISTER_SIZE
-    sw $v1, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $a0, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $a1, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $a2, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $a3, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $t0, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $t1, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $t2, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $t3, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $t4, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $t5, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $t6, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $t7, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $s0, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $s1, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $s2, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $s3, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $s4, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $s5, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $s6, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $s7, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $t8, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $t9, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $gp, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $sp, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $fp, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	sw $ra, 0($k1)
+    lw $sp, SP_BYTE_OFFSET($k1)
+    lw $fp, FP_BYTE_OFFSET($k1)
+    lw $gp, GP_BYTE_OFFSET($k1)
+    lw $ra, RA_BYTE_OFFSET($k1)
 
 
     mfc0 $k0, $13, 0                                # load the Cause register into $k0
@@ -226,96 +164,35 @@ Syscall_Exception:
 
 end_exception_block:
 
+    # load the kernel context
+    la $k0, kernel_register_base
+    lw $k1, 0($k0)
+
+    sw $sp, SP_BYTE_OFFSET($k1)
+    sw $fp, FP_BYTE_OFFSET($k1)
+    sw $gp, GP_BYTE_OFFSET($k1)
+    sw $ra, RA_BYTE_OFFSET($k1)
+
+
     la $k0, current_task_register_base              
     lw $k1, 0($k0)
 
-    # load registers from stored context
-    addi $k1, $k1, REGISTER_SIZE
-	lw $at, 0($k1)
 
-    addi $k1, $k1, REGISTER_SIZE
-	lw $v0, 0($k1)
+    lw $t0, T0_BYTE_OFFSET($k1)
+    lw $t1, T1_BYTE_OFFSET($k1)
+    lw $t2, T2_BYTE_OFFSET($k1)
+    lw $t3, T3_BYTE_OFFSET($k1)
+    lw $t4, T4_BYTE_OFFSET($k1)
+    lw $t5, T5_BYTE_OFFSET($k1)
+    lw $t6, T6_BYTE_OFFSET($k1)
+    lw $t7, T7_BYTE_OFFSET($k1)
+    lw $t8, T8_BYTE_OFFSET($k1)
+    lw $t9, T9_BYTE_OFFSET($k1)
 
-    addi $k1, $k1, REGISTER_SIZE
-	lw $v1, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $a0, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $a1, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $a2, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $a3, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $t0, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $t1, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $t2, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $t3, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $t4, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $t5, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $t6, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $t7, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $s0, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $s1, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $s2, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $s3, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $s4, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $s5, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $s6, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $s7, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $t8, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $t9, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $gp, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $sp, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $fp, 0($k1)
-
-    addi $k1, $k1, REGISTER_SIZE
-	lw $ra, 0($k1)
+    lw $sp, SP_BYTE_OFFSET($k1)
+    lw $fp, FP_BYTE_OFFSET($k1)
+    lw $gp, GP_BYTE_OFFSET($k1)
+    lw $ra, RA_BYTE_OFFSET($k1)
 
 
     eret

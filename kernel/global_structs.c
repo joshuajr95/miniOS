@@ -15,7 +15,6 @@
 
 // task table and base address
 task_table_t task_table;
-//task_table_t *TASK_TABLE_BASE_ADDR = &task_table;
 
 
 /* Pointer to the base of the register array for the current task.

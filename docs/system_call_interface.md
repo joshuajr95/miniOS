@@ -21,8 +21,17 @@ When the user executes the `syscall` instruction, a system call exception occurs
 ### System Call Numbers
 
 
-| System Call Number | System Call Name |
-| ------------------ | ---------------- |
-| 0                  | create_task      |
-| 1                  | destroy_task     |
-| 2                  | yield            |
+| System Call Number | System Call Name         |
+| ------------------ | ------------------------ |
+| 0                  | create_task              |
+| 1                  | kill_task                |
+| 2                  | yield                    |
+| 3                  | wait                     |
+| 4                  | waitpid                  |
+| 5                  | exit                     |
+| 6                  | open                     |
+| 7                  | close                    |
+| 8                  | read                     |
+| 9                  | write                    |
+| 10                 | register_event_handler   |
+

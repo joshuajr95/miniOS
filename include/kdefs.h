@@ -63,10 +63,40 @@
 #define REGISTER_RA          31
 
 
-// Deprecated since C preprocessor will not perform mathematical operations
-// defines the byte offset of a given register from the base of the array
-//#define REGISTER_OFFSET(register) register*4
+// define the byte offsets for each register in the register array
+// useful for assembly language files that need to access offset of
+// particular registers
 
-
+#define AT_BYTE_OFFSET          4
+#define V0_BYTE_OFFSET          8
+#define V1_BYTE_OFFSET          12
+#define A0_BYTE_OFFSET          16
+#define A1_BYTE_OFFSET          20
+#define A2_BYTE_OFFSET          24
+#define A3_BYTE_OFFSET          28
+#define T0_BYTE_OFFSET          32
+#define T1_BYTE_OFFSET          36
+#define T2_BYTE_OFFSET          40
+#define T3_BYTE_OFFSET          44
+#define T4_BYTE_OFFSET          48
+#define T5_BYTE_OFFSET          52
+#define T6_BYTE_OFFSET          56
+#define T7_BYTE_OFFSET          60
+#define S0_BYTE_OFFSET          64
+#define S1_BYTE_OFFSET          68
+#define S2_BYTE_OFFSET          72
+#define S3_BYTE_OFFSET          76
+#define S4_BYTE_OFFSET          80
+#define S5_BYTE_OFFSET          84
+#define S6_BYTE_OFFSET          88
+#define S7_BYTE_OFFSET          92
+#define T8_BYTE_OFFSET          96
+#define T9_BYTE_OFFSET          100
+#define K0_BYTE_OFFSET          104
+#define K1_BYTE_OFFSET          108
+#define GP_BYTE_OFFSET          112
+#define SP_BYTE_OFFSET          116
+#define FP_BYTE_OFFSET          120
+#define RA_BYTE_OFFSET          124
 
 #endif
