@@ -5,7 +5,7 @@
  * This file implements a number of functions regarding task management.
  */
 
-#include <task.h>
+#include "task.h"
 
 
 void task_table_init(task_table_t *table)

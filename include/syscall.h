@@ -26,8 +26,26 @@
 #define __SYSCALL   // empty macro for now, may need to use in the future
 
 
-taskid_t do_syscall_create_task();
+/*
+ * System call implementation functions must
+ * be converted from function pointers into
+ * void pointers since the various system call
+ * implementations will have different numbers
+ * of parameters and thus cannot define an array
+ * of function pointers. Parameters will be passed
+ * by the syscall wrapper functions in the 
+ * api directory, and are not modified by the
+ * syscall dispatch code or general exception
+ * handler, so the type-casting here does
+ * not affect the parameter passing.
+ */
+#define __SYSCALL_TABLE__ (void*)
 
+
+
+
+taskid_t do_syscall_create_task();
+int do_syscall_kill_task(taskid_t task_id);
 
 
 

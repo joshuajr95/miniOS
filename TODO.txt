@@ -1,0 +1,9 @@
+
+
+TODO
+-------------------------------------------------------
+- Create boot directory with startup code in it
+- Create scripts directory with linker script and others.
+- Figure out open source license
+- Figure out git hooks/pull request
+- Testing regime

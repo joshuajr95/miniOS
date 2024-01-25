@@ -17,7 +17,8 @@
 task_table_t task_table;
 
 
-/* Pointer to the base of the register array for the current task.
+/* 
+ * Pointer to the base of the register array for the current task.
  * This is necessary to avoid clobbering any registers during the
  * context switch procedure. The base address of the array containing
  * the stored register context for the next scheduled task will be 
@@ -28,7 +29,8 @@ task_table_t task_table;
 uint32_t *current_task_register_base;
 
 
-/* Pointer to the base of the register array for the kernel.
+/* 
+ * Pointer to the base of the register array for the kernel.
  * This is necessary to restore the kernel context during the
  * context switch procedure. It must be global or otherwise the
  * code in context_switch.S would have no way of knowing about the
@@ -41,5 +43,8 @@ void switch_task_regs()
 {
     current_task_register_base = task_table.current_task->regs;
 }
+
+
+
 
 
