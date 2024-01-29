@@ -35,5 +35,6 @@ When the user executes the `syscall` instruction, a system call exception occurs
 | 9                  | write                    |
 | 10                 | mkfile                   |
 | 11                 | mkdir                    |
+| 12                 | dup/2                    |
 | ??                 | register_event_handler   |
 

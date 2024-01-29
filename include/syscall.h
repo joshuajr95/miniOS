@@ -46,6 +46,7 @@
 
 taskid_t do_syscall_create_task();
 int do_syscall_kill_task(taskid_t task_id);
+int do_syscall_yield();
 
 
 

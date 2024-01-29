@@ -2,6 +2,9 @@
 
 TODO
 -------------------------------------------------------
+- In assembly code, remember to put nops in branch and load delay slots
+- For linking, need -nostartfiles flag to pass own startup code and 
+    the --relocatable flag to do partial linking
 - Create boot directory with startup code in it
 - Create scripts directory with linker script and others.
 - Figure out open source license
