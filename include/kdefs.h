@@ -98,5 +98,6 @@
 #define SP_BYTE_OFFSET          116
 #define FP_BYTE_OFFSET          120
 #define RA_BYTE_OFFSET          124
+#define PC_BYTE_OFFSET          128
 
 #endif

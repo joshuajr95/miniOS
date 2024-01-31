@@ -3,7 +3,6 @@
  * 
  *
  * This file has the assembly code for performing the general exception dispatch.
- * This code when compiled will be put 
  */
 
 
@@ -33,21 +32,34 @@
 #define REGISTER_SIZE       4       // in bytes
 
 
-# changed it to .kdata since will be in kernel memory
-.kdata
+.data
 
-# Extra layer of indirection is unnecessary
+
 exception_table: .word E0, E1, E2, E3, E4, E5, E6, E7, E8
 
 
-# changed it to .ktext since in kernel code segment
-.ktext
+.section .text.general_exception, code
+.set noreorder
+.set noat
+.set nomips16
+.globl _general_exception_context
+.ent _general_exception_context
 
-general_exception_handler:
+
+/*
+ * This is the name of the function that will be
+ * targeted by the xc32 toolchain for handling of
+ * general exceptions. The toolchain will place a
+ * jump instruction at _ebase + 0x180 that jumps to
+ * the label _general_exception_context
+ */
+_general_exception_context:
     
     # load base address of current task's registers into kernel register
     la $k0, current_task_register_base
+    nop
     lw $k1, 0($k0)
+    nop
 
 
     # save the caller-saved registers, return address,
@@ -72,7 +84,9 @@ general_exception_handler:
     
     # load the kernel context
     la $k0, kernel_register_base
+    nop
     lw $k1, 0($k0)
+    nop
 
     lw $sp, SP_BYTE_OFFSET($k1)
     lw $fp, FP_BYTE_OFFSET($k1)
@@ -81,6 +95,7 @@ general_exception_handler:
 
 
     mfc0 $k0, $13, 0                                # load the Cause register into $k0
+    nop
     andi $k0, $k0, CAUSE_EXCCODE_FIELD_MASK         # bitwise and to extract the ExcCode field from Cause
                                                     # do not need to shift right by 2 bits since ExcCode is
                                                     # used to index into exceptionTable, which is word-aligned
@@ -90,66 +105,85 @@ general_exception_handler:
 
     # exception jump table implementation
     la $t0, exception_table                         # load the base address of the exception table
+    nop
     add $t0, $t0, $k0                               # add the ExcCode byte address offset to base to get address of exception handler
     lw $t1, 0($t0)                                  # load the address of exception handler
+    nop
     jr $t1                                          # jump to the address of the exception handler
+    nop
 
 
 
 E0:
     j end_exception_block
+    nop
 
 E1:
     j TLB_Modification_Exception
+    nop
 
 E2:
     j TLB_Load_Exception
+    nop
 
 E3:
     j TLB_Store_Exception
+    nop
 
 E4:
     j Address_Load_Exception
+    nop
 
 E5:
     j Address_Store_Exception
+    nop
 
 E6:
     j Instruction_Bus_Error
+    nop
 
 E7:
     j Data_Bus_Error
+    nop
 
 E8:
     j Syscall_Exception
+    nop
 
 
 # TLB exceptions are not implemented since the MIPS M4K core
 # uses a fixed memory mapping as opposed to a TLB
 TLB_Modification_Exception:
     j end_exception_block
+    nop
 
 TLB_Load_Exception:
     j end_exception_block
+    nop
 
 TLB_Store_Exception:
     j end_exception_block
+    nop
 
 Address_Load_Exception:
     # deal with error
     j end_exception_block
+    nop
 
 Address_Store_Exception:
     # deal with error
     j end_exception_block
+    nop
 
 Instruction_Bus_Error:
     # deal with error
     j end_exception_block
+    nop
 
 Data_Bus_Error:
     # deal with error
     j end_exception_block
+    nop
 
 
 # For MIPS system calls, the system call number must be passed
@@ -158,7 +192,9 @@ Data_Bus_Error:
 # to jump to the correct syscall handler.
 Syscall_Exception:
     jal syscall_dispatch
+    nop
     j end_exception_block
+    nop
 
 
 
@@ -166,7 +202,9 @@ end_exception_block:
 
     # load the kernel context
     la $k0, kernel_register_base
+    nop
     lw $k1, 0($k0)
+    nop
 
     sw $sp, SP_BYTE_OFFSET($k1)
     sw $fp, FP_BYTE_OFFSET($k1)
@@ -174,8 +212,10 @@ end_exception_block:
     sw $ra, RA_BYTE_OFFSET($k1)
 
 
-    la $k0, current_task_register_base              
+    la $k0, current_task_register_base
+    nop
     lw $k1, 0($k0)
+    nop
 
 
     lw $t0, T0_BYTE_OFFSET($k1)
@@ -193,6 +233,7 @@ end_exception_block:
     lw $fp, FP_BYTE_OFFSET($k1)
     lw $gp, GP_BYTE_OFFSET($k1)
     lw $ra, RA_BYTE_OFFSET($k1)
+    nop
 
 
     eret

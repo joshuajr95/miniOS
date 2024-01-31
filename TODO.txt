@@ -2,11 +2,16 @@
 
 TODO
 -------------------------------------------------------
-- In assembly code, remember to put nops in branch and load delay slots
 - For linking, need -nostartfiles flag to pass own startup code and 
     the --relocatable flag to do partial linking
-- Create boot directory with startup code in it
-- Create scripts directory with linker script and others.
+- Write exection handler for bootstrap exception, cache error, TLB refill
+    exception
+- Modify default linker script
+- Finish general exception handling (all exception codes, check on TLB stuff,
+    check Microchip implementation of general exception handler)
+- Substitute $reg for reg in all assembly files.
+- Create config script
+- Create build system that wraps xc32-gcc
 - Figure out open source license
 - Figure out git hooks/pull request
 - Testing regime

@@ -49,8 +49,7 @@ typedef struct TASK_CONTROL_BLOCK
 
     // storage for register data when task is context switched off CPU
     // program counter is at index 0 since register 0 is a constant
-    uint32_t regs[NUM_REGS];
-    uint32_t program_counter;
+    uint32_t regs[NUM_REGS + 1];
 
 } task_control_block_t;
 

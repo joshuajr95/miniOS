@@ -47,6 +47,19 @@
  *
  ********************************************************************/
 
+
+ /****************************************
+  *     MiniOS Note
+  ****************************************
+  *
+  * This code is largely unchanged from
+  * the original Microchip implementation.
+  * The main difference for now is that it
+  * will jump to init_kernel() instead of
+  * main() at the end of startup
+  *
+  ****************************************/
+
 #include "xc.h"
 #include <cp0defs.h>
 
@@ -620,9 +633,9 @@ _main_entry:
 
         ##################################################################
 
-        # Call main
+        # Call init_kernel
         ##################################################################
-        la    	t0,main
+        la    	t0,init_kernel
         jalr 	t0
         nop
 

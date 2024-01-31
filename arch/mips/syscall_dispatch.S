@@ -8,10 +8,12 @@
 
 
 
+.text
+.set noreorder
 
-.ktext
-
-syscall_dispatch:
+.globl _syscall_dispatch
+.ent _syscall_dispatch
+_syscall_dispatch:
 
     # load syscall table and then load syscall handling routine
     la $t0, syscall_table
@@ -25,10 +27,12 @@ syscall_dispatch:
 
     # jump to syscall handler
     jalr $t1
+    nop
 
     # reload return address
     lw $ra, 0($sp)
     addi $sp, $sp, 4
 
     jr $ra
+    nop
 
