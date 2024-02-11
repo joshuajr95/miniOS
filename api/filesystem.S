@@ -16,5 +16,7 @@ open:
     syscall             # execute syscall
     jr ra              # return from syscall wrapper function
     nop                 # branch delay slot
+    
+    .end open
 
 

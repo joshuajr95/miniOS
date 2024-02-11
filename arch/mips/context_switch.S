@@ -166,7 +166,10 @@ _context_switch:
     mtc0 $k0, $14
     nop
 
+    # SWITCH TO USER MODE CODE MUST BE HERE
+
     # return from exception
+    ehb
     eret
 
 

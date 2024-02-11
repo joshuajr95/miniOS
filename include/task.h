@@ -9,9 +9,11 @@
 #ifndef TASK_H
 #define TASK_H
 
-#include <stdint.h>
+#include "stdint.h"
+#include "kdefs.h"
 
-#include <kdefs.h>
+
+#define TASK_ID_NONE -1
 
 
 typedef enum
@@ -66,11 +68,11 @@ typedef struct TASK_CONTROL_BLOCK
  */
 typedef struct TASK_TABLE
 {
-    task_control_block_t *head;
-    task_control_block_t *tail;
     unsigned int num_tasks;
-    unsigned int next_task_number;
+    task_control_block_t *root;
     task_control_block_t *current_task;
+
+    unsigned int next_available_task_number;
 
     // stores the registers the kernel is using
     uint32_t kernel_regs[NUM_REGS];
@@ -89,7 +91,7 @@ void delete_task(task_table_t *table);
 
 // function pointer type used for input to the create task function and
 // simplifies the function definition interface
-typedef void *(*task_function_t)(void *) ;
+typedef void *(*task_function_t)(void *);
 
 
 // creates a task to run the given function. Returns the task id of 
@@ -100,9 +102,9 @@ unsigned int create_task(task_function_t function);
 void run_task(unsigned int task_id);
 
 // stops the current task from running and sets it into the idle state
-void idle_task();
+void pause_task();
 
-void terminate_task(unsigned int task_id);
+void kill_task(unsigned int task_id);
 
 
 

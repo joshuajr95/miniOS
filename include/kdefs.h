@@ -21,6 +21,9 @@
 #define MAX_TASKS 64
 
 
+#define NULL_POINTER (void*) 0
+
+
 // define register offsets into register array
 
 #define REGISTER_AT          1

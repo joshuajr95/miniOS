@@ -11,9 +11,11 @@
 
 #include "task.h"
 #include "kdefs.h"
+#include "filesystem.h"
+#include "kheap.h"
 
 
-// task table and base address
+// task table
 task_table_t task_table;
 
 
@@ -37,6 +39,24 @@ uint32_t *current_task_register_base;
  * variable.
  */ 
 uint32_t *kernel_register_base;
+
+
+/*
+ * Address of the base of the
+ * RAMdisk allows the OS to find
+ * files in memory.
+ */
+superblock_t *ramdisk_superblock;
+
+
+/*
+ * Address of the base of the
+ * kernel heap.
+ */
+void *kernel_heap_base;
+
+
+heap_cb_t kernel_heap_cb;
 
 
 void switch_task_regs()

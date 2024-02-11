@@ -36,5 +36,7 @@ When the user executes the `syscall` instruction, a system call exception occurs
 | 10                 | mkfile                   |
 | 11                 | mkdir                    |
 | 12                 | dup/2                    |
+| 13                 | mount                    |
+| 14                 | seek                     |
 | ??                 | register_event_handler   |
 

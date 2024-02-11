@@ -12,7 +12,10 @@ export BUILD_DIR
 export SCRIPT_DIR
 
 # Microchip provides toolchain for PIC32 MCUs
-CC = xc32-gcc
+# Use the g++ compiler since it allows for overloading
+# and the use of namespaces, which is useful for
+# the device driver subsystem
+CC = xc32-g++
 AR = xc32-ar
 
 export CC
