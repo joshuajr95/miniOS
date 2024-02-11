@@ -175,10 +175,14 @@ _no_nmi:
 
         ##################################################################
         # Initialize Stack Pointer
-        #   _stack is initialized by the linker script to point to the
-        #    starting location of the stack in DRM
+        # _kernel_stack is initialized by the linker script to point
+        # to the starting location of the kernel stack in DRM. This is 
+        # different than in original startup code, in which sp was made
+        # to point to the symbol _stack. This worked fine for firmware
+        # that all ran in kernel mode, but we need both a user and kernel
+        # stack, so this will not work.
         ##################################################################
-        la      sp,_stack
+        la      sp, _kernel_stack
 
         ##################################################################
         # Initialize Global Pointer
@@ -369,8 +373,9 @@ _dinit_end:
   /* No initialization required */
 #else /* Use BMX */
         ##################################################################
-        # Initialize bus matrix registers if RAM functions exist in the
-        # application
+        # Initialize bus matrix registers so that user program will be 
+        # able to run. The _bmx*_address symbols are defined by the
+        # linker script.
         ##################################################################
         la      t1,_bmxdkpba_address
         la      t2,BMXDKPBA
@@ -380,6 +385,9 @@ _dinit_end:
         sw      t1,0(t2)
         la      t1,_bmxdupba_address
         la      t2,BMXDUPBA
+        sw      t1,0(t2)
+        la      t1,_bmxpupba_address
+        la      t2,BMXPUPBA
         sw      t1,0(t2)
 #endif /* INIT_SSX */
 
