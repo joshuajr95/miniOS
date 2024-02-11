@@ -124,8 +124,8 @@ _GEN_EXCPT_ADDR                = _ebase_address + 0x180;
 
 MEMORY
 {
-  useg_program_mem      (rx)  : ORIGIN = 0x7D060000, LENGTH = 0x20000
-  kseg0_program_mem     (rx)  : ORIGIN = 0x9D000000, LENGTH = 0x60000
+  useg_program_mem      (rx)  : ORIGIN = 0x7D000000, LENGTH = 0x80000
+  kseg0_program_mem     (rx)  : ORIGIN = 0x9D000000, LENGTH = 0x80000
   kseg0_boot_mem              : ORIGIN = 0x9FC00490, LENGTH = 0x970
   exception_mem               : ORIGIN = 0x9FC01000, LENGTH = 0x1000
   kseg1_boot_mem              : ORIGIN = 0xBFC00000, LENGTH = 0x490
@@ -134,8 +134,8 @@ MEMORY
   config2                     : ORIGIN = 0xBFC02FF4, LENGTH = 0x4
   config1                     : ORIGIN = 0xBFC02FF8, LENGTH = 0x4
   config0                     : ORIGIN = 0xBFC02FFC, LENGTH = 0x4
-  kseg1_data_mem       (w!x)  : ORIGIN = 0xA0000000, LENGTH = 0x10000
-  useg_data_mem        (w!x)  : ORIGIN = 0x7F010000, LENGTH = 0x10000
+  kseg1_data_mem       (w!x)  : ORIGIN = 0xA0000000, LENGTH = 0x20000
+  useg_data_mem        (w!x)  : ORIGIN = 0x7F000000, LENGTH = 0x20000
   sfrs                        : ORIGIN = 0xBF800000, LENGTH = 0x100000
   configsfrs                  : ORIGIN = 0xBFC02FF0, LENGTH = 0x10
 }
@@ -520,16 +520,38 @@ SECTIONS
   /* Code Sections - Note that input sections *(.text) and *(.text.*)
    * are not mapped here. The best-fit allocator locates them,
    * so that .text may flow around absolute sections as needed.
+   *
+   * MiniOS note: The above statement is not true for miniOS, since
+   * the user programs must be kept separate from the kernel. Thus
+   * all text sections for both kernel and user space are allocated
+   * here using the sequential allocator.
    */
+
+
+  . = ORIGIN(kseg0_program_mem)
+  _ktext_start = . ;
+
   .text :
   {
+    
+    /* 
+     * These sections do not appear
+     * to be used at all.
+     */
     *(.stub .gnu.linkonce.t.*)
     KEEP (*(.text.*personality*))
     *(.mips16.fn.*)
     *(.mips16.call.*)
     *(.gnu.warning)
+
+    *kernel.a:(.text .text.*)
+    *drivers.a:(.text .text.*)
+    *mips.a:(.text .text.*)
+    *libpic32.a:(.text .text.*)
     . = ALIGN(4) ;
   } >kseg0_program_mem
+
+  
   /* Global-namespace object initialization */
   .init   :
   {
@@ -542,7 +564,8 @@ SECTIONS
   } >kseg0_program_mem
   .fini   :
   {
-    KEEP (*(.fini))
+    KEEP (*crti.o(.fini))
+    KEEP (*crtn.o(.fini))
     . = ALIGN(4) ;
   } >kseg0_program_mem
   .preinit_array   :
@@ -603,7 +626,12 @@ SECTIONS
   .rodata   :
   {
     *( .gnu.linkonce.r.*)
-    *(.rodata1)
+
+    *kernel.a:(.rodata1)
+    *drivers.a:(.rodata1)
+    *mips.a:(.rodata1)
+    *libpic32.a:(.rodata1)
+
     . = ALIGN(4) ;
   } >kseg0_program_mem
   /*
@@ -613,7 +641,11 @@ SECTIONS
    */
   .sdata2 ALIGN(4) :
   {
-    *(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
+    *kernel.a:(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
+    *drivers.a:(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
+    *mips.a:(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
+    *libpic32.a:(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
+
     . = ALIGN(4) ;
   } >kseg0_program_mem
   /*
@@ -623,7 +655,10 @@ SECTIONS
    */
   .sbss2 ALIGN(4) :
   {
-    *(.sbss2 .sbss2.* .gnu.linkonce.sb2.*)
+    *kernel.a:(.sbss2 .sbss2.* .gnu.linkonce.sb2.*)
+    *drivers.a:(.sbss2 .sbss2.* .gnu.linkonce.sb2.*)
+    *mips.a:(.sbss2 .sbss2.* .gnu.linkonce.sb2.*)
+    *libpic32.a:(.sbss2 .sbss2.* .gnu.linkonce.sb2.*)
     . = ALIGN(4) ;
   } >kseg0_program_mem
   .eh_frame_hdr   :
@@ -639,8 +674,38 @@ SECTIONS
   .gcc_except_table   : ONLY_IF_RO
   {
     *(.gcc_except_table .gcc_except_table.*)
+
   } >kseg0_program_mem
-    . = ALIGN(4) ;
+
+  /*
+   * Align location counter upward to 2KB boundary
+   * since the BMXPUPBA register forces 2KB
+   * alignment.
+   */
+  . = ALIGN(2048);
+
+  _ktext_end = . ;
+
+
+  /*
+   * Use start and end variables since base address
+   * of memory segment will not help and LENGTH function
+   * gets the length of memory segment, not length
+   * of section.
+   */
+  _bmxpupba_address = _ktext_end - _ktext_start ;
+
+
+  .user_text ORIGIN(useg_program_mem) + _bmxpupba_address :
+  {
+    *(.text .text.*)
+
+  } >useg_program_mem
+
+
+  _kdata_begin = . ;
+  _data_begin = . ;
+
   .dbg_data (NOLOAD) :
   {
     . += (DEFINED (_DEBUGGER) ? 0x200 : 0x0);
@@ -672,16 +737,26 @@ SECTIONS
    *  Note that input sections named .data* are not mapped here.
    *  The best-fit allocator locates them, so that they may flow
    *  around absolute sections as needed.
+   *
+   *  MiniOS note: not true anymore.
    */
   .data   :
   {
     *( .gnu.linkonce.d.*)
     SORT(CONSTRUCTORS)
     *(.data1)
+
+    *kernel.a:(.data*)
+    *drivers.a:(.data*)
+    *mips.a:(.data*)
+    *libpic32.a:(.data*)
+
     . = ALIGN(4) ;
   } >kseg1_data_mem
+
   . = .;
   _gp = ALIGN(16) + 0x7ff0;
+
   .got ALIGN(4) :
   {
     *(.got.plt) *(.got)
@@ -701,27 +776,53 @@ SECTIONS
   .sdata ALIGN(4) :
   {
     _sdata_begin = . ;
-    *(.sdata .sdata.* .gnu.linkonce.s.*)
+
+    *kernel.a:(.sdata .sdata.* .gnu.linkonce.s.*)
+    *drivers.a:(.sdata .sdata.* .gnu.linkonce.s.*)
+    *mips.a:(.sdata .sdata.* .gnu.linkonce.s.*)
+    *libpic32.a:(.sdata .sdata.* .gnu.linkonce.s.*)
+
     . = ALIGN(4) ;
     _sdata_end = . ;
   } >kseg1_data_mem
+
+  /*
+   * .lit sections are used only for gp-relative addressing
+   */
   .lit8           :
   {
     *(.lit8)
   } >kseg1_data_mem
+
   .lit4           :
   {
     *(.lit4)
   } >kseg1_data_mem
+
   . = ALIGN (4) ;
   _data_end = . ;
+
   _bss_begin = . ;
+
   .sbss ALIGN(4) :
   {
     _sbss_begin = . ;
-    *(.dynsbss)
-    *(.sbss .sbss.* .gnu.linkonce.sb.*)
-    *(.scommon)
+
+    *kernel.a:(.dynsbss)
+    *drivers.a:(.dynsbss)
+    *mips.a:(.dynsbss)
+    *libpic32.a:(.dynsbss)
+
+    *kernel.a:(.sbss .sbss.* .gnu.linkonce.sb.*)
+    *drivers.a:(.sbss .sbss.* .gnu.linkonce.sb.*)
+    *mips.a:(.sbss .sbss.* .gnu.linkonce.sb.*)
+    *libpic32.a:(.sbss .sbss.* .gnu.linkonce.sb.*)
+
+    *kernel.a:(.scommon)
+    *drivers.a:(.scommon)
+    *mips.a:(.scommon)
+    *libpic32.a:(.scommon)
+
     _sbss_end = . ;
     . = ALIGN(4) ;
   } >kseg1_data_mem
@@ -737,8 +838,21 @@ SECTIONS
    */
   .bss     :
   {
-    *(.dynbss)
-    *(COMMON)
+    *kernel.a:(.dynbss)
+    *drivers.a:(.dynbss)
+    *mips.a:(.dynbss)
+    *libpic32.a:(.dynbss)
+
+    *kernel.a:(COMMON)
+    *drivers.a:(COMMON)
+    *mips.a:(COMMON)
+    *libpic32.a:(COMMON)
+
+    *kernel.a:(.bss)
+    *drivers.a:(.bss)
+    *mips.a:(.bss)
+    *libpic32.a:(.bss)
+
    /* Align here to ensure that the .bss section occupies space up to
       _end.  Align after .bss to ensure correct alignment even if the
       .bss section disappears because there are no input sections. */
@@ -747,6 +861,58 @@ SECTIONS
   . = ALIGN(4) ;
   _end = . ;
   _bss_end = . ;
+
+  /*
+   * No need for 2KB page alignment here
+   * since there is also RAMdisk, stack,
+   * and heap to consider.
+   */
+  _kdata_end = . ;
+
+  
+
+  /*
+   * Define the bounds of the kernel
+   * heap area.
+   */
+  _kheap_begin = . ;
+  . += _kernel_heap_size ;
+  _kheap_end = . ;
+
+  /*
+   * Define the RAMdisk symbols.
+   */
+  _ramdisk_begin = . ;
+  . += _ramdisk_size ;
+  _ramdisk_end = . ;
+
+  /*
+   * Kernel stack region.
+   */
+  . += _kernel_stack_size ;
+  . = ALIGN(2048) ;
+  _kernel_stack = . ;
+
+  _bmxdudba_address = _kernel_stack - _kdata_begin ;
+
+  
+  .udata ORIGIN(useg_data_mem) + _bmxdudba_address :
+  {
+    *(.data)
+  } >useg_data_mem
+
+  .ubss :
+  {
+    *(.bss)
+  } >useg_data_mem
+
+
+  _user_heap_begin = . ;
+  . += _user_heap_size ;
+
+  _user_stack = ORIGIN(useg_data_mem) + LENGTH(useg_data_mem) ;
+
+
   /*
    *  The heap and stack are best-fit allocated by the linker after other
    *  data and bss sections have been allocated.
@@ -758,9 +924,10 @@ SECTIONS
    * RAM functions are now allocated by the linker. The linker generates
    * _ramfunc_begin and _bmxdkpba_address symbols depending on the
    * location of RAM functions.
-   */
+   *
   _bmxdudba_address = LENGTH(kseg1_data_mem) ;
   _bmxdupba_address = LENGTH(kseg1_data_mem) ;
+   */
     /* The .pdr section belongs in the absolute section */
     /DISCARD/ : { *(.pdr) }
   .gptab.sdata : { *(.gptab.data) *(.gptab.sdata) }
