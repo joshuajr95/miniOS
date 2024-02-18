@@ -5,7 +5,7 @@
 
 
 void memcpy(void *dest, void *source, unsigned int num_bytes);
-void memset(void *dest, int val, unsigned int num_bytes);
+void memset(void *dest, unsigned char val, unsigned int num_bytes);
 
 int strlen(char *string);
 int strnlen(char *string, int maxlen);

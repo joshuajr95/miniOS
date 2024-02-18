@@ -1,0 +1,19 @@
+---
+
+drivers:
+  - uart:
+    path: ./uart.c
+    type: chardev
+    drivernumber: 0
+  - spi:
+    path: ./spi.c
+    type: chardev
+    drivernumber: 1
+  - i2c:
+    path: ./i2c.c
+    type: chardev
+    drivernumber: 2
+  - can.c:
+    path: ./can.c
+    type: chardev
+    drivernumber: 3

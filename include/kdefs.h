@@ -18,7 +18,9 @@
 
 // Defines maximum number of tasks allowed on the system. Used to prevent
 // system overload
-#define MAX_TASKS 64
+#define MAX_TASKS 32
+
+#define BYTES_PER_REGISTER 4
 
 
 #define NULL_POINTER (void*) 0
@@ -64,6 +66,7 @@
 #define REGISTER_SP          29
 #define REGISTER_FP          30
 #define REGISTER_RA          31
+#define REGISTER_PC          32
 
 
 // define the byte offsets for each register in the register array

@@ -41,25 +41,25 @@ typedef struct HEAP_CONTROL_BLOCK
  * a given bit corresponding to a block number.
  */
 #define SET_32B_BLOCK_IN_USE(_heap_cb, _block_number)       \
-        if(_block_number < _heap_cb->num_32B_blocks)        \
+        if(_block_number < (_heap_cb)->num_32B_blocks)      \
         {                                                   \
             unsigned int mask = 0x1 << _block_number;       \
-            _heap_cb->in_use_32B |= mask;                   \
+            (_heap_cb)->in_use_32B |= mask;                 \
         }
 
 #define SET_128B_BLOCK_IN_USE(_heap_cb, _block_number)      \
-        if(_block_number < _heap_cb->num_128B_blocks)       \
+        if(_block_number < (_heap_cb)->num_128B_blocks)     \
         {                                                   \
             unsigned int mask = 0x1 << _block_number;       \
-            _heap_cb->in_use_128B |= mask;                  \
+            (_heap_cb)->in_use_128B |= mask;                \
         }
 
 
 #define SET_512B_BLOCK_IN_USE(_heap_cb, _block_number)      \
-        if(_block_number < _heap_cb->num_512B_blocks)       \
+        if(_block_number < (_heap_cb)->num_512B_blocks)     \
         {                                                   \
             unsigned char mask = 0x1 << _block_number;      \
-            _heap_cb->in_use_512B |= mask;                  \
+            (_heap_cb)->in_use_512B |= mask;                \
         }
 
 
@@ -69,25 +69,25 @@ typedef struct HEAP_CONTROL_BLOCK
  * a given bit corresponding to a block number.
  */
 #define SET_32B_BLOCK_FREE(_heap_cb, _block_number)         \
-        if(_block_number < _heap_cb->num_32B_blocks)        \
+        if(_block_number < (_heap_cb)->num_32B_blocks)      \
         {                                                   \
             unsigned int mask = ~(0x1 << _block_number);    \
-            _heap_cb->in_use_32B &= mask;                   \
+            (_heap_cb)->in_use_32B &= mask;                 \
         }
 
 #define SET_128B_BLOCK_FREE(_heap_cb, _block_number)        \
-        if(_block_number < _heap_cb->num_128B_blocks)       \
+        if(_block_number < (_heap_cb)->num_128B_blocks)     \
         {                                                   \
             unsigned int mask = ~(0x1 << _block_number);    \
-            _heap_cb->in_use_128B &= mask;                  \
+            (_heap_cb)->in_use_128B &= mask;                \
         }
 
 
 #define SET_512B_BLOCK_FREE(_heap_cb, _block_number)        \
-        if(_block_number < _heap_cb->num_512B_blocks)       \
+        if(_block_number < (_heap_cb)->num_512B_blocks)     \
         {                                                   \
             unsigned char mask = ~(0x1 << _block_number);   \
-            _heap_cb->in_use_512B &= mask;                  \
+            (_heap_cb)->in_use_512B &= mask;                \
         }
 
 
@@ -103,10 +103,10 @@ typedef struct HEAP_CONTROL_BLOCK
 #define IS_32B_BLOCK_IN_USE(_heap_cb, _block_number)                    \
     __extension__ ({                                                    \
         int in_use;                                                     \
-        if(_block_number < _heap_cb->num_32B_blocks)                    \
+        if(_block_number < (_heap_cb)->num_32B_blocks)                  \
         {                                                               \
             unsigned int mask = 0x1 << _block_number;                   \
-            in_use = (_heap_cb->in_use_32B & mask) >> _block_number;    \
+            in_use = ((_heap_cb)->in_use_32B & mask) >> _block_number;  \
         }                                                               \
         else                                                            \
         {                                                               \
@@ -119,10 +119,10 @@ typedef struct HEAP_CONTROL_BLOCK
 #define IS_128B_BLOCK_IN_USE(_heap_cb, _block_number)                   \
     __extension__ ({                                                    \
         int in_use;                                                     \
-        if(_block_number < _heap_cb->num_128B_blocks)                   \
+        if(_block_number < (_heap_cb)->num_128B_blocks)                 \
         {                                                               \
             unsigned int mask = 0x1 << _block_number;                   \
-            in_use = (_heap_cb->in_use_128B & mask) >> _block_number;   \
+            in_use = ((_heap_cb)->in_use_128B & mask) >> _block_number; \
         }                                                               \
         else                                                            \
         {                                                               \
@@ -135,10 +135,10 @@ typedef struct HEAP_CONTROL_BLOCK
 #define IS_512B_BLOCK_IN_USE(_heap_cb, _block_number)                   \
     __extension__ ({                                                    \
         int in_use;                                                     \
-        if(_block_number < _heap_cb->num_512B_blocks)                   \
+        if(_block_number < (_heap_cb)->num_512B_blocks)                 \
         {                                                               \
             unsigned int mask = 0x1 << _block_number;                   \
-            in_use = (_heap_cb->in_use_512B & mask) >> _block_number;   \
+            in_use = ((_heap_cb)->in_use_512B & mask) >> _block_number; \
         }                                                               \
         else                                                            \
         {                                                               \
@@ -162,7 +162,7 @@ typedef struct HEAP_CONTROL_BLOCK
 #define ADDRESS_OF_128B_BLOCK(_heap_cb, _block_number)                  \
     __extension__ ({                                                    \
         void *addr = kernel_heap_base;                                  \
-        addr += _heap_cb->num_32B_blocks*BLOCKSIZE_32_BYTES;            \
+        addr += (_heap_cb)->num_32B_blocks*BLOCKSIZE_32_BYTES;          \
         addr += _block_number*BLOCKSIZE_128_BYTES;                      \
         addr;                                                           \
     })
@@ -170,8 +170,8 @@ typedef struct HEAP_CONTROL_BLOCK
 #define ADDRESS_OF_512B_BLOCK(_heap_cb, _block_number)                  \
     __extension__ ({                                                    \
         void *addr = kernel_heap_base;                                  \
-        addr += _heap_cb->num_32B_blocks*BLOCKSIZE_32_BYTES;            \
-        addr += _heap_cb->num_128B_blocks*BLOCKSIZE_128_BYTES;          \
+        addr += (_heap_cb)->num_32B_blocks*BLOCKSIZE_32_BYTES;          \
+        addr += (_heap_cb)->num_128B_blocks*BLOCKSIZE_128_BYTES;        \
         addr += _block_number*BLOCKSIZE_512_BYTES;                      \
         addr;                                                           \
     })
@@ -182,7 +182,7 @@ typedef struct HEAP_CONTROL_BLOCK
     __extension__ ({                                                    \
         void *ret = NULL_POINTER;                                       \
         int block_number = 0;                                           \
-        while(block_number < _heap_cb->num_32B_blocks)                  \
+        while(block_number < (_heap_cb)->num_32B_blocks)                \
         {                                                               \
             if(!IS_32B_BLOCK_IN_USE(_heap_cb, block_number))            \
             {                                                           \
@@ -200,7 +200,7 @@ typedef struct HEAP_CONTROL_BLOCK
     __extension__ ({                                                    \
         void *ret = NULL_POINTER;                                       \
         int block_number = 0;                                           \
-        while(block_number < _heap_cb->num_128B_blocks)                 \
+        while(block_number < (_heap_cb)->num_128B_blocks)               \
         {                                                               \
             if(!IS_128B_BLOCK_IN_USE(_heap_cb, block_number))           \
             {                                                           \
@@ -218,7 +218,7 @@ typedef struct HEAP_CONTROL_BLOCK
     __extension__ ({                                                    \
         void *ret = NULL_POINTER;                                       \
         int block_number = 0;                                           \
-        while(block_number < _heap_cb->num_512B_blocks)                 \
+        while(block_number < (_heap_cb)->num_512B_blocks)               \
         {                                                               \
             if(!IS_512B_BLOCK_IN_USE(_heap_cb, block_number))           \
             {                                                           \
@@ -236,31 +236,31 @@ typedef struct HEAP_CONTROL_BLOCK
  * Gets the blocksize from the address of the
  * memory. Useful for freeing memory.
  */
-#define GET_BLOCKSIZE_FROM_POINTER(_heap_cb, _pointer)                  \
-    __extension__ ({                                                    \
-        int blocksize;                                                  \
-        int offset = _pointer - kernel_heap_base;                       \
-        if(offset < 0)                                                  \
-        {                                                               \
-            blocksize = 0;                                              \
-        }                                                               \
-        else if(offset < _heap_cb->num_32B_blocks*BLOCKSIZE_32_BYTES)   \
-        {                                                               \
-            blocksize = BLOCKSIZE_32_BYTES;                             \
-        }                                                               \
-        else if(offset < _heap_cb->num_128B_blocks*BLOCKSIZE_128_BYTES) \
-        {                                                               \
-            blocksize = BLOCKSIZE_128_BYTES;                            \
-        }                                                               \
-        else if(offset < _heap_cb->num_512B_blocks*BLOCKSIZE_512_BYTES) \
-        {                                                               \
-            blocksize = BLOCKSIZE_512_BYTES;                            \
-        }                                                               \
-        else                                                            \
-        {                                                               \
-            blocksize = 0;                                              \
-        }                                                               \
-        blocksize;                                                      \
+#define GET_BLOCKSIZE_FROM_POINTER(_heap_cb, _pointer)                      \
+    __extension__ ({                                                        \
+        int blocksize;                                                      \
+        int offset = _pointer - kernel_heap_base;                           \
+        if(offset < 0)                                                      \
+        {                                                                   \
+            blocksize = 0;                                                  \
+        }                                                                   \
+        else if(offset < (_heap_cb)->num_32B_blocks*BLOCKSIZE_32_BYTES)     \
+        {                                                                   \
+            blocksize = BLOCKSIZE_32_BYTES;                                 \
+        }                                                                   \
+        else if(offset < (_heap_cb)->num_128B_blocks*BLOCKSIZE_128_BYTES)   \
+        {                                                                   \
+            blocksize = BLOCKSIZE_128_BYTES;                                \
+        }                                                                   \
+        else if(offset < (_heap_cb)->num_512B_blocks*BLOCKSIZE_512_BYTES)   \
+        {                                                                   \
+            blocksize = BLOCKSIZE_512_BYTES;                                \
+        }                                                                   \
+        else                                                                \
+        {                                                                   \
+            blocksize = 0;                                                  \
+        }                                                                   \
+        blocksize;                                                          \
     })
 
 
@@ -279,7 +279,7 @@ typedef struct HEAP_CONTROL_BLOCK
 #define GET_128B_BLOCKNUMBER_FROM_POINTER(_heap_cb, _pointer)           \
     __extension__ ({                                                    \
         int offset = _pointer - kernel_heap_base;                       \
-        offset -= _heap_cb->num_32B_blocks*BLOCKSIZE_32_BYTES;          \
+        offset -= (_heap_cb)->num_32B_blocks*BLOCKSIZE_32_BYTES;        \
         int block_number = offset / BLOCKSIZE_128_BYTES;                \
         block_number;                                                   \
     })
@@ -288,8 +288,8 @@ typedef struct HEAP_CONTROL_BLOCK
 #define GET_512B_BLOCKNUMBER_FROM_POINTER(_heap_cb, _pointer)           \
     __extension__ ({                                                    \
         int offset = _pointer - kernel_heap_base;                       \
-        offset -= _heap_cb->num_32B_blocks*BLOCKSIZE_32_BYTES;          \
-        offset -= _heap_cb->num_128B_blocks*BLOCKSIZE_128_BYTES;        \
+        offset -= (_heap_cb)->num_32B_blocks*BLOCKSIZE_32_BYTES;        \
+        offset -= (_heap_cb)->num_128B_blocks*BLOCKSIZE_128_BYTES;      \
         int block_number = offset / BLOCKSIZE_512_BYTES;                \
         block_number;                                                   \
     })

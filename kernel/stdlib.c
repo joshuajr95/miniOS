@@ -1,6 +1,6 @@
 
 
-#include "misc.h"
+#include "stdlib.h"
 
 
 
@@ -14,6 +14,18 @@ void memcpy(void *dest, void *source, unsigned int num_bytes)
     while(current < num_bytes)
     {
         *dst++ = *src++;
+        current++;
+    }
+}
+
+
+void memset(void *dest, unsigned char val, unsigned int size)
+{
+    unsigned int current;
+
+    while(current < size)
+    {
+        *((char*)dest + current) = val;
         current++;
     }
 }
