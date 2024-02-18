@@ -5,7 +5,7 @@
 #include "task.h"
 #include "kheap.h"
 #include "filesystem.h"
-#include "misc.h"
+#include "stdlib.h"
 
 /*
  * Defined in arch/mips/userspace.S
@@ -38,7 +38,7 @@ void init_kernel()
     kernel_register_base = &task_table.kernel_regs[0];
 
     store_kernel_context();
-    init_heap(_kheap_begin);
+    init_heap(&kernel_heap_cb);
     
     // not configurable right now
     superblock_t superblock;
@@ -51,10 +51,10 @@ void init_kernel()
 
 
     // register device drivers
-    // register device filesystem
+    // register device filesystem (takes driver table)
 
 
     // stores the kernel context, loads
-    // main task context, and
+    // main task context, and jumps to main
     go_to_main();
 }

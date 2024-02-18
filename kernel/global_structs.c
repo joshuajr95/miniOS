@@ -13,6 +13,7 @@
 #include "kdefs.h"
 #include "filesystem.h"
 #include "kheap.h"
+#include "device_driver_subsystem.h"
 
 
 // task table
@@ -57,6 +58,7 @@ void *kernel_heap_base;
 
 
 heap_cb_t kernel_heap_cb;
+
 
 
 void switch_task_regs()
