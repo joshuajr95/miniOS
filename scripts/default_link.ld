@@ -909,6 +909,7 @@ SECTIONS
 
   _user_heap_begin = . ;
   . += _user_heap_size ;
+  _user_heap_end = . ;
 
   _user_stack = ORIGIN(useg_data_mem) + LENGTH(useg_data_mem) ;
 
