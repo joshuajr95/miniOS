@@ -1,7 +1,7 @@
 # miniOS
 
 
-MiniOS is a miniature operating system originally developed for the PIC32MX family of microcontrollers. It is relatively simple, but allows for faster development of embedded programs than would otherwise be possible with bare-metal development.
+MiniOS is a miniature operating system developed for the PIC32MX family of microcontrollers. It is relatively simple, allowing for faster development of embedded programs than would otherwise be possible with bare-metal development.
 
 
 ### Using miniOS

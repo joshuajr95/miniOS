@@ -4,9 +4,22 @@ TODO
 -------------------------------------------------------
 - For linking, need -nostartfiles flag to pass own startup code and 
     the --relocatable flag to do partial linking
-- Write exection handler for bootstrap exception, cache error, TLB refill
+- Check EPC in exception handling for whether in user space or kernel
+    space so that if kernel space don't switch to user space after exception.
+    Also check that correct instruction is stored in EPC on exception so that
+    may restart at correct PC.
+- Check operation of ehb hazards (p. 82 and 105 of MIPS Privileged Resource
+    Architecture Guide), switch to userspace, interrupt priorities, and 
+    problems with interrupt occurring during syscall handling.
+- Add libc directory and put library functions in there.
+- Figure out linker script memory vs. in file, for example does location
+    counter also reflect memory location and alignment for in memory.
+- Fix linker script where crti.o, etc. are referenced as though they
+    are not in an archive
+- Write exeption handler for bootstrap exception, cache error, TLB refill
     exception
-- Modify default linker script
+- Figure out how to handle reentrancy for exception handlers and interrupts.
+- Event handler dispatch functions.
 - Finish general exception handling (all exception codes, check on TLB stuff,
     check Microchip implementation of general exception handler)
 - Substitute $reg for reg in all assembly files.

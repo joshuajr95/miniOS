@@ -1,12 +1,13 @@
 # Makefile used for building the MiniOS
 
-KERNEL_DIR =		kernel
-DRIVER_DIR = 		drivers
-INCLUDE_DIR =		include
-BUILD_DIR =			build
-API_DIR =			api
-SCRIPT_DIR = 		scripts
-ARCH_DIR = 			arch
+BASEDIR = 			$(shell pwd)
+KERNEL_DIR =		$(BASEDIR)/kernel
+DRIVER_DIR = 		$(BASEDIR)/drivers
+INCLUDE_DIR =		$(BASEDIR)/include
+BUILD_DIR =			$(BASEDIR)/build
+API_DIR =			$(BASEDIR)/api
+SCRIPT_DIR = 		$(BASEDIR)/scripts
+ARCH_DIR = 			$(BASEDIR)/arch
 
 export BUILD_DIR
 export SCRIPT_DIR
