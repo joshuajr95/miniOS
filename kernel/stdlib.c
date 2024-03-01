@@ -4,7 +4,7 @@
 
 
 
-void memcpy(void *dest, void *source, unsigned int num_bytes)
+void memcopy(void *dest, void *source, unsigned int num_bytes)
 {
     int current = 0;
 

@@ -38,7 +38,8 @@ When the user executes the `syscall` instruction, a system call exception occurs
 | 12                 | dup/2                    |
 | 13                 | mount                    |
 | 14                 | seek                     |
-| 15                 | sleep                    |
-| 16                 | get_children             |
+| 15                 | delete_file              |
+| 16                 | sleep                    |
+| 17                 | get_children             |
 | ??                 | register_event_handler   |
 

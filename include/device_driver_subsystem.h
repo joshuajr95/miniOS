@@ -2,29 +2,19 @@
 #define DEVICE_DRIVER_SUBSYSTEM_H
 
 
-// maybe have this be part of file type
-#define DRIVER_TYPE_CHAR                0
-#define DRIVER_TYPE_BLOCK               1
-#define DRIVER_TYPE_NET                 2
-#define DRIVER_TYPE_TIMER               3
-#define DRIVER_TYPE_GPIO                4
-#define DRIVER_TYPE_ADC                 5
-#define DRIVER_TYPE_PWM                 6
-
-
-#define DRIVER_SUBTYPE_UART             0
-#define DRIVER_SUBTYPE_SPI              1
-#define DRIVER_SUBTYPE_I2C              2
-#define DRIVER_SUBTYPE_CAN              3
-#define DRIVER_SUBTYPE_TIMER            4
-#define DRIVER_SUBTYPE_ADC              5
-#define DRIVER_SUBTYPE_PWM              6
-#define DRIVER_SUBTYPE_DAC              7
-#define DRIVER_SUBTYPE_HDD              8
-#define DRIVER_SUBTYPE_SSD              9
-#define DRIVER_SUBTYPE_ETHERNET         10
-#define DRIVER_SUBTYPE_WIFI             11
-#define DRIVER_SUBTYPE_BLUETOOTH        12
+#define DRIVER_TYPE_UART             0
+#define DRIVER_TYPE_SPI              1
+#define DRIVER_TYPE_I2C              2
+#define DRIVER_TYPE_CAN              3
+#define DRIVER_TYPE_TIMER            4
+#define DRIVER_TYPE_ADC              5
+#define DRIVER_TYPE_PWM              6
+#define DRIVER_TYPE_DAC              7
+#define DRIVER_TYPE_HDD              8
+#define DRIVER_TYPE_SSD              9
+#define DRIVER_TYPE_ETHERNET         10
+#define DRIVER_TYPE_WIFI             11
+#define DRIVER_TYPE_BLUETOOTH        12
 
 #define MAX_DRIVER_TYPE             32
 

@@ -118,9 +118,20 @@ void task_table_init(task_table_t *table)
 
 void schedule_next_task(task_table_t *table)
 {
+    // set current task into ready to be scheduled state
+    table->current_task->state = READY;
     table->current_task = table->current_task->next_task;
+
+    // should check here for case where no tasks are ready and sleep
+    while(table->current_task->state != READY && table->current_task->state != CREATED)
+    {
+        table->current_task = table->current_task->next_task;
+    }
+    
     current_task_register_base = table->current_task->regs;
 }
+
+
 
 task_control_block_t *get_task(task_table_t *table, int task_id)
 {
@@ -134,6 +145,7 @@ task_control_block_t *get_task(task_table_t *table, int task_id)
 
     return task;
 }
+
 
 void run_task(int task_id)
 {

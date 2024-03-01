@@ -31,7 +31,8 @@ typedef enum
 {
     CREATED,
     RUNNING,
-    IDLE,
+    BLOCKED,
+    READY,
     TERMINATED
 
 } task_state_t;

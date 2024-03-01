@@ -20,6 +20,13 @@
 #define SYSCALL_CODE_CLOSE              7
 #define SYSCALL_CODE_READ               8
 #define SYSCALL_CODE_WRITE              9
+#define SYSCALL_CODE_MKFILE             10
+#define SYSCALL_CODE_MKDIR              11
+#define SYSCALL_CODE_DUP                12
+#define SYSCALL_CODE_MOUNT              13
+#define SYSCALL_CODE_SEEK               14
+#define SYSCALL_CODE_DELETE_FILE        15
+#define SYSCALL_CODE_SLEEP              16
 
 
 
@@ -41,12 +48,6 @@
  */
 #define __SYSCALL_TABLE__ (void*)
 
-
-
-
-taskid_t do_syscall_create_task(void *function);
-int do_syscall_kill_task(taskid_t task_id);
-int do_syscall_yield();
 
 
 

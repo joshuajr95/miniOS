@@ -27,9 +27,11 @@ extern uint32_t *kernel_register_base;
 extern void *_kernel_stack;
 extern heap_cb_t kernel_heap_cb;
 extern void *_ramdisk_begin;
+extern superblock_t *ramdisk_superblock;
 
 void init_kernel()
 {
+    // disable interrupts
     create_userspace();
 
     task_table_init(&task_table);
@@ -43,18 +45,22 @@ void init_kernel()
     // not configurable right now
     superblock_t superblock;
     superblock.inode_table_start = 2;
-    superblock.inode_table_num_blocks = 2;
+    superblock.num_inodes = NUM_INODES;
 
-    memcpy(_ramdisk_begin, &superblock, sizeof(superblock_t));
+    ramdisk_superblock = _ramdisk_begin;
+    memcpy(ramdisk_superblock, &superblock, sizeof(superblock_t));
 
     init_filesystem();
 
-
+    // TODO:
+    //////////////////////////////////
+    // init oscillator
+    // init interrupts
     // register device drivers
     // register device filesystem (takes driver table)
-
-
     // stores the kernel context, loads
     // main task context, and jumps to main
+    // enable interrupts
+    
     go_to_main();
 }
