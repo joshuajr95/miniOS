@@ -4,9 +4,11 @@
 #include "stdlib.h"
 #include "fs_archive.h"
 #include "kdefs.h"
+#include "device_driver_subsystem.h"
 
 extern superblock_t *ramdisk_superblock;
 extern filesystem_archive_t fs_archive[];
+extern driver_table_t driver_table;
 
 
 /*
@@ -689,12 +691,39 @@ int open_file(superblock_t *superblock, open_file_table_t *open_file_table, char
     open_file_table->open_files[open_file_index].inode_number = inode_number;
 
     // if file is device file, need to run device open procedure
-    if((inode->file_type == FILE_TYPE_CHAR) ||
-        (inode->file_type == FILE_TYPE_BLOCK) ||
-        (inode->file_type == FILE_TYPE_NET))
-        {
-            // TODO: device-specific open procedure.
-        }
+    switch (inode->file_type)
+    {
+    case FILE_TYPE_CHAR:
+        driver_table.drivers[GET_DRIVER_TYPE(inode)].u.chardev.open(GET_DEVICE_NUMBER(inode));
+        break;
+    
+    case FILE_TYPE_BLOCK:
+        driver_table.drivers[GET_DRIVER_TYPE(inode)].u.blockdev.open(GET_DEVICE_NUMBER(inode));
+        break;
+    
+    case FILE_TYPE_NET:
+        driver_table.drivers[GET_DRIVER_TYPE(inode)].u.netdev.open(GET_DEVICE_NUMBER(inode));
+        break;
+    
+    case FILE_TYPE_TIMER:
+        // TODO
+        break;
+
+    case FILE_TYPE_GPIO:
+        // TODO
+        break;
+    
+    case FILE_TYPE_ADC:
+        // TODO
+        break;
+    
+    case FILE_TYPE_PWM:
+        // TODO
+        break;
+    
+    default:
+        break;
+    }
 
     return open_file_index;
 }
@@ -702,8 +731,45 @@ int open_file(superblock_t *superblock, open_file_table_t *open_file_table, char
 
 int close_file(superblock_t *superblock, open_file_table_t *open_file_table, int file_descriptor)
 {
+    inode_t *inode = get_inode(superblock, open_file_table->open_files[file_descriptor].inode_number);
+
+    switch (inode->file_type)
+    {
+    case FILE_TYPE_CHAR:
+        driver_table.drivers[GET_DRIVER_TYPE(inode)].u.chardev.open(GET_DEVICE_NUMBER(inode));
+        break;
+    
+    case FILE_TYPE_BLOCK:
+        driver_table.drivers[GET_DRIVER_TYPE(inode)].u.blockdev.open(GET_DEVICE_NUMBER(inode));
+        break;
+    
+    case FILE_TYPE_NET:
+        driver_table.drivers[GET_DRIVER_TYPE(inode)].u.netdev.open(GET_DEVICE_NUMBER(inode));
+        break;
+    
+    case FILE_TYPE_TIMER:
+        // TODO
+        break;
+
+    case FILE_TYPE_GPIO:
+        // TODO
+        break;
+    
+    case FILE_TYPE_ADC:
+        // TODO
+        break;
+    
+    case FILE_TYPE_PWM:
+        // TODO
+        break;
+    
+    default:
+        break;
+    }
+
     memset(&open_file_table->open_files[file_descriptor], 0, sizeof(open_file_table_entry_t));
     set_open_file_free(open_file_table, file_descriptor);
+
 
     return 0;
 }
@@ -723,7 +789,44 @@ int read_file(inode_t *inode, void *buffer, unsigned short offset, unsigned shor
     short bytes_to_read;
     short bytes_read = 0;
 
-    // TODO: char, block, and net devices
+    switch (inode->file_type)
+    {
+    case FILE_TYPE_CHAR:
+        bytes_read = driver_table.drivers[GET_DRIVER_TYPE(inode)].u.chardev.read(GET_DEVICE_NUMBER(inode), buffer, size);
+        break;
+    
+    case FILE_TYPE_BLOCK:
+        bytes_read = driver_table.drivers[GET_DRIVER_TYPE(inode)].u.blockdev.read(GET_DEVICE_NUMBER(inode), buffer, size);
+        break;
+    
+    case FILE_TYPE_NET:
+        bytes_read = driver_table.drivers[GET_DRIVER_TYPE(inode)].u.netdev.read(GET_DEVICE_NUMBER(inode), buffer, size);
+        break;
+    
+    case FILE_TYPE_TIMER:
+        // TODO
+        break;
+    
+    case FILE_TYPE_GPIO:
+        // TODO
+        break;
+    
+    case FILE_TYPE_ADC:
+        // TODO
+        break;
+    
+    case FILE_TYPE_PWM:
+        // TODO
+        break;
+    
+    default:
+        break;
+    }
+
+    if(is_device_file(inode))
+    {
+        return bytes_read;
+    }
 
 
     // continue reading from file blocks until no data left
@@ -762,7 +865,44 @@ int write_file(superblock_t *superblock, inode_t *inode, void *buffer, unsigned 
     void *current_block;
     
 
-    // TODO: char, block, net devices
+    switch (inode->file_type)
+    {
+    case FILE_TYPE_CHAR:
+        bytes_written = driver_table.drivers[GET_DRIVER_TYPE(inode)].u.chardev.write(GET_DEVICE_NUMBER(inode), buffer, size);
+        break;
+    
+    case FILE_TYPE_BLOCK:
+        bytes_written = driver_table.drivers[GET_DRIVER_TYPE(inode)].u.blockdev.write(GET_DEVICE_NUMBER(inode), buffer, size);
+        break;
+    
+    case FILE_TYPE_NET:
+        bytes_written = driver_table.drivers[GET_DRIVER_TYPE(inode)].u.netdev.write(GET_DEVICE_NUMBER(inode), buffer, size);
+        break;
+    
+    case FILE_TYPE_TIMER:
+        // TODO
+        break;
+    
+    case FILE_TYPE_GPIO:
+        // TODO
+        break;
+    
+    case FILE_TYPE_ADC:
+        // TODO
+        break;
+    
+    case FILE_TYPE_PWM:
+        // TODO
+        break;
+    
+    default:
+        break;
+    }
+
+    if(is_device_file(inode))
+    {
+        return bytes_written;
+    }
 
     if(offset > inode->file_size)
     {
@@ -822,6 +962,8 @@ int create_file(superblock_t *superblock, int type, char *file_path, short major
     
     if(is_valid_file_type(type))
         inode->file_type = type;
+    else
+        return -1;
     
     inode->file_size = 0;
 

@@ -1,6 +1,7 @@
 
-
+#include "filesystem.h"
 #include "device_driver_subsystem.h"
+#include "stdlib.h"
 
 
 /*
@@ -11,11 +12,118 @@
  * drivers and a variable containing
  * the number of drivers in the array.
  */
-extern driver_t *_device_driver_list;
-extern int _num_drivers;
+extern driver_t *device_driver_list;
+extern int num_drivers;
+
+
+extern driver_table_t driver_table;
+extern superblock_t *ramdisk_superblock;
+
+
+static int is_driver_free(driver_table_t *driver_table, int driver_number)
+{
+    int byte_index = driver_number/8;
+    unsigned char bit_index = driver_number%8;
+    int in_use = ( driver_table->drivers_bitmap[byte_index] >> bit_index) & 0x1;
+    return in_use;
+}
+
+static void set_driver_in_use(driver_table_t *driver_table, int driver_number)
+{
+    int byte_index = driver_number/8;
+    unsigned char bit_index = driver_number%8;
+    unsigned char mask = 0x1 << bit_index;
+    driver_table->drivers_bitmap[byte_index] |= mask;
+}
+
+static void set_driver_free(driver_table_t *driver_table, int driver_number)
+{
+    int byte_index = driver_number/8;
+    unsigned char bit_index = driver_number%8;
+    unsigned char mask = ~(0x1 << bit_index);
+    driver_table->drivers_bitmap[byte_index] &= mask;
+}
+
+
+static void create_dev_files(driver_t *driver, int *minor_nums)
+{
+    // create device files
+    for(int i = 0; minor_nums[i] != 0; i++)
+    {
+        // TODO
+        char filename[MAX_PATH_LENGTH];
+        char *cursor = filename;
+        short bytes_written;
+
+        // prefix filename with /dev directory
+        bytes_written = strncpy(cursor, "/dev/", MAX_FILENAME_LENGTH);
+        cursor += bytes_written;
+
+        // first part of filename is the driver type: for example uart
+        bytes_written = strncpy(cursor, dev_file_names[driver->driver_type], MAX_FILENAME_LENGTH);
+        cursor += bytes_written;
+
+        // second part of filename is device number
+        memcopy(cursor, ((char) minor_nums[i]) + "0", 1);
+        cursor ++;
+        *cursor = "\0";
+
+        create_file(ramdisk_superblock, driver->file_type, filename, driver->driver_type, minor_nums[i]);
+    }
+}
+
 
 
 void init_dev_drivers()
 {
+    if (create_file(ramdisk_superblock, FILE_TYPE_DIRECTORY, "/dev", 0, 0) != 0)
+    {
+        return;
+    }
 
+    int minor_nums[MINOR_NUMBER_MASK + 1];
+
+    for(int i = 0; i < num_drivers; i++)
+    {
+        memset(minor_nums, 0, sizeof(int)*(MINOR_NUMBER_MASK+1));
+
+        // call init functions. modifies minor_nums to give device
+        // numbers which are used to init dev files
+        switch (device_driver_list[i].file_type)
+        {
+        case FILE_TYPE_CHAR:
+            device_driver_list[i].u.chardev.init(minor_nums);
+            break;
+        
+        case FILE_TYPE_BLOCK:
+            device_driver_list[i].u.blockdev.init(minor_nums);
+            break;
+        
+        case FILE_TYPE_NET:
+            device_driver_list[i].u.netdev.init(minor_nums);
+            break;
+        
+        case FILE_TYPE_TIMER:
+            device_driver_list[i].u.timerdev.init(minor_nums);
+        
+        case FILE_TYPE_GPIO:
+            device_driver_list[i].u.gpiodev.init(minor_nums);
+            break;
+        
+        case FILE_TYPE_ADC:
+            device_driver_list[i].u.adcdev.init(minor_nums);
+            break;
+        
+        case FILE_TYPE_PWM:
+            device_driver_list[i].u.pwmdev.init(minor_nums);
+            break;
+
+        default:
+            break;
+        }
+
+        create_dev_files(&device_driver_list[i], minor_nums);
+        memcopy(&driver_table.drivers[device_driver_list[i].driver_type], &device_driver_list[i], sizeof(driver_t));
+        set_driver_in_use(&driver_table, device_driver_list[i].driver_type);
+    }
 }

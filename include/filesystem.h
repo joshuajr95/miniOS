@@ -41,6 +41,10 @@
     (BLOCK_SIZE/sizeof(block_number_t))*(BLOCK_SIZE/sizeof(block_number_t))*BLOCK_SIZE)
 
 
+#define MINOR_NUMBER_MASK 0x7
+#define MINOR_NUMBER_BITS 3
+
+
 // will make fully configurable later
 #define BLOCK_SIZE 64
 #define RAMDISK_SIZE 16384
@@ -138,24 +142,12 @@ typedef struct INODE
 } inode_t;
 
 
-#define GET_DRIVER_TYPE(_inode)                     \
-    __extension__ ({                                \
-        unsigned char major;                        \
-        major = ( (inode)->major_and_minor >> 3)    \
-        major;                                      \
-    })
-
-#define GET_DEVICE_NUMBER(_inode)                   \
-    __extension__ ({                                \
-        unsigned char minor;                        \
-        minor = ( (inode)->major_and_minor & 0x7)   \
-        minor;                                      \
-    })
+#define GET_DRIVER_TYPE(_inode) ( (inode)->major_and_minor >> MINOR_NUMBER_BITS)
+#define GET_DEVICE_NUMBER(_inode) ( (inode)->major_and_minor & MINOR_NUMBER_MASK)
 
 
 
-
-
+ 
 
 
 typedef struct SUPERBLOCK

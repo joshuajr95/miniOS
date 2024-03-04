@@ -64,6 +64,8 @@ open_file_table_t open_file_table;
 
 
 
+driver_table_t driver_table;
+
 
 
 void switch_task_regs()
