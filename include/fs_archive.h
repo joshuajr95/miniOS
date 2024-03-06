@@ -6,6 +6,10 @@
 #define RECORD_TYPE_DIRECTORY       1
 #define RECORD_TYPE_LIST_END        2
 
+
+#define ARCHIVE_ERROR_NO_CHILD              -1
+#define ARCHIVE_ERROR_WRONG_RECORD_TYPE     -2
+
 typedef struct ARCHIVE
 {
     int type;

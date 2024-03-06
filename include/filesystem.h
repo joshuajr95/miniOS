@@ -103,6 +103,8 @@ typedef int inode_number_t;
 #endif
 
 
+#define INODE_NONE -1
+
 
 
 
@@ -168,7 +170,7 @@ typedef struct SUPERBLOCK
     unsigned char free_inode_bitmap[NUM_INODES/8];
     unsigned char free_block_bitmap[RAMDISK_SIZE/(BLOCK_SIZE*8)];
 
-    short root_inode_index;
+    inode_number_t root_inode_index;
 
 } superblock_t;
 
@@ -204,16 +206,17 @@ typedef struct OPEN_FILE_TABLE
  */
 void init_filesystem();
 
+void add_directory_entry(superblock_t *superblock, inode_number_t directory_inode, dir_entry_t *entry);
 
-
-int open_file(superblock_t *superblock, open_file_table_t *open_file_table, char *path);
+int open_file(superblock_t *superblock, inode_number_t current_dir, open_file_table_t *open_file_table, char *path);
 int close_file(superblock_t *superblock, open_file_table_t *open_file_table, int file_descriptor);
 
 int read_file(inode_t *inode, void *buffer, unsigned short offset, unsigned short size);
 int write_file(superblock_t *superblock, inode_t *inode, void *buffer, unsigned short offset, unsigned short size);
 
-int create_file(superblock_t *superblock, int type, char *file_path, short major, short minor);
-int delete_file(superblock_t *superblock, open_file_table_t *open_file_table, char *file_path);
+int create_file(superblock_t *superblock, inode_number_t current_dir, int type, char *file_path, short major, short minor);
+int delete_file(superblock_t *superblock, inode_number_t current_dir, open_file_table_t *open_file_table, char *file_path);
 
+void create_root();
 
 #endif

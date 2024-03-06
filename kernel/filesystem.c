@@ -26,6 +26,7 @@ void init_filesystem()
     memset(&superblock.free_block_bitmap, 0xff, RAMDISK_SIZE/(BLOCK_SIZE*8));
     set_block_in_use(&superblock, SUPERBLOCK_NUMBER);
     
+    // set inode table blocks in use
     int num_blocks_inode_table = (superblock.num_inodes*sizeof(inode_t))/BLOCK_SIZE;
 
     // in case inode table only uses part of the last block
@@ -199,9 +200,10 @@ static int find_first_free_open_file(open_file_table_t *open_file_table)
 
 
 
-static void add_directory_entry(superblock_t *superblock, inode_t *directory_inode, dir_entry_t *entry)
+void add_directory_entry(superblock_t *superblock, inode_number_t directory_inode, dir_entry_t *entry)
 {
-    write_file(superblock, directory_inode, entry, directory_inode->file_size, sizeof(dir_entry_t));
+    inode_t *inode = get_inode(superblock, directory_inode);
+    write_file(superblock, directory_inode, entry, inode->file_size, sizeof(dir_entry_t));
 }
 
 
@@ -212,7 +214,7 @@ static void add_directory_entry(superblock_t *superblock, inode_t *directory_ino
  * to is to initialize it as the root directory
  * of the filesystem.
  */
-void create_root(dir_entry_t *root_dir, int num_entries)
+void create_root()
 {
     /*
      * The base address of the ramdisk is where the superblock
@@ -230,15 +232,6 @@ void create_root(dir_entry_t *root_dir, int num_entries)
     root_entry.file_size = 0;
 
     memset(&root_entry.block_numbers, 0, INODE_BLOCK_LIST_SIZE*sizeof(block_number_t));
-    root_entry.block_numbers[0] =  get_next_free_block_number(superblock);
-    set_block_in_use(&superblock, root_entry.block_numbers[0]);
-
-    for(int i = 0; i < num_entries; i++)
-    {
-        add_directory_entry(&root_entry, &root_dir[i]);
-    }
-
-    root_entry.file_size = sizeof(dir_entry_t)*num_entries;
 }
 
 
@@ -674,14 +667,24 @@ int is_device_file(inode_t *inode)
 
 
 
-int open_file(superblock_t *superblock, open_file_table_t *open_file_table, char *path)
+int open_file(superblock_t *superblock, inode_number_t current_dir, open_file_table_t *open_file_table, char *path)
 {
     inode_number_t inode_number;
     int open_file_index;
     inode_t *inode;
 
     // perform recursive path lookup to get the inode number
-    inode_number = recursive_lookup(superblock, path);
+    if(current_dir == INODE_NONE)
+    {
+        // TODO: fix this - file not directory
+        inode_number = recursive_lookup(superblock, path);
+    }
+    else
+    {
+        inode_number = current_dir;
+    }
+
+    
     inode = get_inode(superblock, inode_number);
 
     // add to open file table
@@ -909,6 +912,8 @@ int write_file(superblock_t *superblock, inode_t *inode, void *buffer, unsigned 
         return bytes_written;
     }
 
+    // whether should add to file size
+    int add_to_file_size = 0;
 
     while(size > 0)
     {
@@ -917,6 +922,7 @@ int write_file(superblock_t *superblock, inode_t *inode, void *buffer, unsigned 
         if((block_number == SUPERBLOCK_NUMBER) && (offset == inode->file_size) && (offset%BLOCK_SIZE == 0))
         {
             block_number = append_new_file_block(superblock, inode);
+            add_to_file_size = 1;
         }
 
         block_offset = GET_BLOCK_OFFSET_FROM_FILE_OFFSET(offset);
@@ -939,15 +945,29 @@ int write_file(superblock_t *superblock, inode_t *inode, void *buffer, unsigned 
 
         // increment total amount written
         bytes_written += bytes_to_write;
+
+        if(add_to_file_size)
+            inode->file_size += bytes_to_write;
     }
 
     return bytes_written;
 }
 
-
-int create_file(superblock_t *superblock, int type, char *file_path, short major, short minor)
+// returns inode # of new file
+int create_file(superblock_t *superblock, inode_number_t current_dir, int type, char *file_path, short major, short minor)
 {
-    inode_number_t dir_inode_number = get_containing_directory(superblock, file_path);
+    inode_number_t dir_inode_number;
+
+    if (current_dir == INODE_NONE)
+    {
+        dir_inode_number = get_containing_directory(superblock, file_path);
+    }
+    else
+    {
+        dir_inode_number = current_dir;
+    }
+    
+    
     inode_t *directory_inode = get_inode(superblock, dir_inode_number);
 
     dir_entry_t entry;
@@ -976,17 +996,29 @@ int create_file(superblock_t *superblock, int type, char *file_path, short major
         return -1;
     }
 
-    add_directory_entry(superblock, directory_inode, &entry);
+    add_directory_entry(superblock, dir_inode_number, &entry);
 
-    return 0;
+    return entry.inode_number;
 }
 
 
 
-int delete_file(superblock_t *superblock, open_file_table_t *open_file_table, char *file_path)
+int delete_file(superblock_t *superblock, inode_number_t current_dir, open_file_table_t *open_file_table, char *file_path)
 {
     int open_file_index;
-    inode_number_t inode_number = recursive_lookup(superblock, file_path);
+    inode_number_t inode_number;
+    
+    if(current_dir == INODE_NONE)
+    {
+        inode_number = recursive_lookup(superblock, file_path);
+    }
+    else
+    {
+        // TODO: fix this - not dir inode number, but file inode number
+        inode_number = current_dir;
+    }
+
+
     set_inode_free(superblock, inode_number);
 
     for(int open_file_index = 0; open_file_index < MAX_OPEN_FILES; open_file_index++)

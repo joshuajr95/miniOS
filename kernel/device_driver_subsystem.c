@@ -68,7 +68,7 @@ static void create_dev_files(driver_t *driver, int *minor_nums)
         cursor ++;
         *cursor = "\0";
 
-        create_file(ramdisk_superblock, driver->file_type, filename, driver->driver_type, minor_nums[i]);
+        create_file(ramdisk_superblock, INODE_NONE, driver->file_type, filename, driver->driver_type, minor_nums[i]);
     }
 }
 
@@ -76,9 +76,9 @@ static void create_dev_files(driver_t *driver, int *minor_nums)
 
 void init_dev_drivers()
 {
-    if (create_file(ramdisk_superblock, FILE_TYPE_DIRECTORY, "/dev", 0, 0) != 0)
+    if(recursive_lookup(ramdisk_superblock, "/dev") < 0)
     {
-        return;
+        create_file(ramdisk_superblock, INODE_NONE, FILE_TYPE_DIRECTORY, "/dev", 0, 0);
     }
 
     int minor_nums[MINOR_NUMBER_MASK + 1];
