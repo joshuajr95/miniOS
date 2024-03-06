@@ -12,6 +12,7 @@
 #include "stdint.h"
 #include "kdefs.h"
 #include "ktypes.h"
+#include "filesystem.h"
 
 
 #define TASK_ID_NONE -1
@@ -36,6 +37,19 @@ typedef enum
     TERMINATED
 
 } task_state_t;
+
+
+/*
+ * Used to represent a usable stack starting point
+ * for a given task. MiniOS will allocate stacks
+ * in a recursive manner, bisecting the total stack
+ * space, with each new task created.
+ */
+typedef struct TASK_STACK
+{
+    void *top;
+
+} task_stack_t;
 
 
 /*
@@ -67,7 +81,13 @@ typedef struct TASK_CONTROL_BLOCK
      * Used by main task since no index.
      */
     task_stack_t *stack;
-    
+
+
+    /*
+     * Records the inode number of the directory
+     * the task is currently in.
+     */
+    inode_number_t current_directory;
 
 
     // next and previous tasks stored in the task list
@@ -115,19 +135,6 @@ typedef struct TASK_CONTROL_BLOCK
     })
 
 
-
-
-/*
- * Used to represent a usable stack starting point
- * for a given task. MiniOS will allocate stacks
- * in a recursive manner, bisecting the total stack
- * space, with each new task created.
- */
-typedef struct TASK_STACK
-{
-    void *top;
-
-} task_stack_t;
 
 
 

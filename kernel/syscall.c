@@ -99,7 +99,7 @@ int do_syscall_exit()
 
 int do_syscall_open(char *path)
 {
-    return open_file(ramdisk_superblock, &open_file_table, path);
+    return open_file(ramdisk_superblock, task_table.current_task->current_directory, &open_file_table, path);
 }
 
 
@@ -172,19 +172,41 @@ void do_syscall_seek(int file_descriptor, int offset)
 
 void do_syscall_mkfile(char *path)
 {
-    return create_file(ramdisk_superblock, FILE_TYPE_REGULAR, path, 0, 0);
+    if(path[0] == '/')
+    {
+        create_file(ramdisk_superblock, INODE_NONE, FILE_TYPE_REGULAR, path, 0, 0);
+    }
+    else
+    {
+        create_file(ramdisk_superblock, task_table.current_task->current_directory, FILE_TYPE_REGULAR, path, 0, 0);
+    }
+    
 }
 
 
 void do_syscall_mkdir(char *path)
 {
-    return create_file(ramdisk_superblock, FILE_TYPE_DIRECTORY, path, 0, 0);
+    if(path[0] == '/')
+    {
+        create_file(ramdisk_superblock, INODE_NONE, FILE_TYPE_DIRECTORY, path, 0, 0);
+    }
+    else
+    {
+        create_file(ramdisk_superblock, task_table.current_task->current_directory, FILE_TYPE_DIRECTORY, path, 0, 0);
+    }
 }
 
 
 void do_syscall_delete_file(char *path)
 {
-    return delete_file(ramdisk_superblock, &open_file_table, path);
+    if(path[0] == '/')
+    {
+        delete_file(ramdisk_superblock, INODE_NONE, &open_file_table, path);
+    }
+    else
+    {
+        delete_file(ramdisk_superblock, task_table.current_task->current_directory, &open_file_table, path);
+    }
 }
 
 // TODO: Remaining syscalls
