@@ -6,6 +6,7 @@
 #include "kheap.h"
 #include "filesystem.h"
 #include "stdlib.h"
+#include <xc.h>
 
 /*
  * Defined in arch/mips/userspace.S
@@ -56,11 +57,13 @@ void init_kernel()
     //////////////////////////////////
     // init oscillator
     // init interrupts
+    DDPCON = 0;
+    INTCONbits.MVEC = 1;
     // register device drivers
     // register device filesystem (takes driver table)
     // stores the kernel context, loads
     // main task context, and jumps to main
     // enable interrupts
-    
+
     go_to_main();
 }
