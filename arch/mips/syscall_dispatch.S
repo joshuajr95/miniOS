@@ -1,10 +1,9 @@
-# Author: Joshua Jacobs-Rebhun
-# Date: October 1, 2022
-#
-#
-#
-# This file implements the dispatch of system calls to the respective handler
-# functions, which are implemented in syscall.c
+/**
+ * @author Joshua Jacobs-Rebhun
+ * 
+ * This file implements the dispatch of system calls to the respective handler
+ * functions, which are implemented in syscall.c
+ */
 
 
 

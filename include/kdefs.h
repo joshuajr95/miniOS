@@ -20,6 +20,10 @@
 // system overload
 #define MAX_TASKS 32
 
+
+// TODO: make configurable
+#define ISR_VECTORS 64
+
 #define BYTES_PER_REGISTER 4
 
 
