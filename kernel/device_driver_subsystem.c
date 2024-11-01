@@ -2,6 +2,7 @@
 #include "filesystem.h"
 #include "device_driver_subsystem.h"
 #include "stdlib.h"
+#include "kheap.h"
 
 
 /*
@@ -18,6 +19,53 @@ extern int num_drivers;
 
 extern driver_table_t driver_table;
 extern superblock_t *ramdisk_superblock;
+
+
+
+int ring_buffer_init(ring_buffer_t *ring_buffer, int buf_size)
+{
+    ring_buffer->buffer_size = buf_size;
+    ring_buffer->buffer = allocate_memory(buf_size);
+    ring_buffer->in = 0;
+    ring_buffer->out = 0;
+
+    return 0;
+}
+
+
+int read_from_ring_buffer(ring_buffer_t *ring_buffer, void *output, int size)
+{
+    char *buffer = (char*) ring_buffer->buffer;
+    char *out_buf = (char*) output;
+    int bytes_read = 0;
+
+    while(ring_buffer->out < ring_buffer->in && bytes_read < size)
+    {
+        out_buf[bytes_read] = buffer[OUT_INDEX(ring_buffer)];
+        bytes_read++;
+        ring_buffer->out++;
+    }
+
+    return bytes_read;
+}
+
+
+int write_to_ring_buffer(ring_buffer_t *ring_buffer, void *input, int size)
+{
+    char *buffer = (char*) ring_buffer->buffer;
+    char *in_buf = (char*) input;
+    int bytes_written = 0;
+
+    while((ring_buffer->in - ring_buffer->out < ring_buffer->buffer_size) && bytes_written < size)
+    {
+        buffer[IN_INDEX(ring_buffer)] = in_buf[bytes_written];
+        bytes_written++;
+        ring_buffer->in++;
+    }
+
+    return bytes_written;
+}
+
 
 
 static int is_driver_free(driver_table_t *driver_table, int driver_number)

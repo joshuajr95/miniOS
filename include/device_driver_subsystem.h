@@ -39,7 +39,8 @@ char *dev_file_names[] = {
 
 
 
-
+// TODO: may need different method since namespace may cause linkage
+// problems with C client code
 
 /*
  * These are used to define the driver namespaces, which
@@ -47,9 +48,54 @@ char *dev_file_names[] = {
  * similarly without needing to prefix each with extra
  * information to prevent naming collisions.
  */
-#define BEGIN_DRIVER(_driver_name) namespace _driver_name {
+#define BEGIN_DRIVER(_driver_name)      namespace _driver_name {
 
-#define END_DRIVER }
+#define END_DRIVER(_driver_name)        }
+
+
+enum uart_parity {
+    EVEN_PARITY,
+    ODD_PARITY,
+    NO_PARITY
+};
+
+enum uart_stop_bits {
+    ONE_STOP_BIT,
+    TWO_STOP_BITS
+};
+
+
+enum uart_data_size {
+    UART_8_BITS,
+    UART_9_BITS
+};
+
+
+typedef struct UART_OPTIONS
+{
+    unsigned int baud;
+    int parity;
+    int stop_bits;
+    int size;
+    int hardware_flow_control;
+
+} uart_options_t;
+
+
+typedef struct DRIVER_OPTIONS
+{
+    unsigned short driver_type;
+
+    union
+    {
+        uart_options_t uart_opts;
+        spi_options_t spi_opts;
+        i2c_options_t i2c_opts;
+        can_options_t can_opts;
+        // TODO: rest of opts
+    } u;
+    
+} driver_options_t;
 
 
 typedef struct DRIVER
@@ -79,7 +125,7 @@ typedef struct CHARDEV
      * device whenever the user invokes the
      * open syscall on that device's file.
      */
-    int (*open)(int);
+    int (*open)(int, driver_options_t*);
 
 
     /*
@@ -98,32 +144,6 @@ typedef struct CHARDEV
      * Write callback function.
      */
     int (*write)(int, void*, unsigned short);
-
-
-    // TODO: These should not be part of the driver table,
-    //       which is supposed to be the interface to syscall
-    //       implementation. Need a separate interface to
-    //       interrupt handlers.
-
-    /*
-     * Callback function for interrupt generated
-     * on error during transmission or reception.
-     */
-    int (*error_interrupt)(int);
-
-
-    /*
-     * Callback function for interrupt generated
-     * on transmission done.
-     */
-    int (*transmit_interrupt)(int);
-
-
-    /*
-     * Callback function for interrupt
-     * generated on reception of data.
-     */
-    int (*receive_interrupt)(int);
 
 
     /*
@@ -232,9 +252,87 @@ typedef struct PWMDEV
 
 
 
+/*
+ * Callback functions for Interrupt Service
+ * Routines (ISRs) for various types of device
+ * drivers. Since each driver handles 
+ */
+
+typedef struct CHAR_ISR
+{
+    void (*error)(int device_number);
+    void (*receive)(int device_number);
+    void (transmit)(int device_number);
+
+} char_isr_callbacks_t
+
+typedef struct DRIVER_ISRS
+{
+    int driver_type;
+    union
+    {
+        char_isr_callbacks_t char_isr_callbacks;
+        // TODO: rest
+    } u;
+
+} driver_isr_callbacks_t;
+
+
+
+
+/*
+typedef struct CHAR_WAIT_QUEUE
+{
+    // task waiting on 
+    taskid_t task;
+
+    // task could be waiting for more data
+    // to arrive of for data to be sent so
+    // that there is more space in the buffer
+    unsigned char read_or_write;
+
+    // task's buffer. Will increment when data is received
+    void *buffer;
+
+} char_wait_queue_t;
+
+
+typedef struct DEVICE_WAIT_QUEUE
+{
+    // file type (i.e. char, block, net, etc.)
+    int device_type;
+
+    union
+    {
+        char_wait_queue_t char_wait_queue;
+        block_wait_queue_t block_wait_queue;
+        net_wait_queue_t net_wait_queue;
+        // TODO: rest of file types
+    } u;
+
+} dev_wait_queue_t;
+*/
+
+
 typedef struct DRIVER_TABLE
 {
+    /*
+     * Drivers member stores the callback functions for
+     * system call implementations (open/close, read/write, etc.)
+     * and driver_isrs member stores callback functions for
+     * interrupt service routines (data received, data transmitted,
+     * transmission/reception error). These are separate to
+     * enforce separation of ISR interface and syscall interface.
+     */
     driver_t drivers[MAX_DRIVER_TYPE];
+    driver_isr_callbacks_t driver_isrs[MAX_DRIVER_TYPE];
+
+    /*
+     * Since some interrupt vectors are shared (for example
+     * UART 1, SPI 3, and I2C 3), must record a mapping of
+     * which interrupt vectors are being used by which device.
+     */
+    unsigned char isr_vector_to_major_minor[ISR_VECTORS];
     unsigned char drivers_bitmap[MAX_DRIVER_TYPE/8];
 
 } driver_table_t;
@@ -255,6 +353,25 @@ typedef struct DRIVER_TABLE
     unsigned char mask = ~(0x1 << bit_index);                   \
     (_driver_table)->drivers[byte_index] &= mask;
 
+
+
+
+
+typedef struct RING_BUFFER
+{
+    void *buffer;
+    int buffer_size;
+    unsigned int in;
+    unsigned int out;
+
+} ring_buffer_t;
+
+#define IN_INDEX(_ring_buffer) ((_ring_buffer)->in % (_ring_buffer)->buffer_size)
+#define OUT_INDEX(_ring_buffer) ((_ring_buffer)->out % (_ring_buffer)->buffer_size)
+
+int ring_buffer_init(ring_buffer_t *ring_buffer, int buf_size);
+int read_from_ring_buffer(ring_buffer_t *ring_buffer, void *output, int size);
+int write_to_ring_buffer(ring_buffer_t *ring_buffer, void *input, int size);
 
 
 /*************************
