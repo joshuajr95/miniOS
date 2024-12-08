@@ -1,0 +1,35 @@
+
+
+IDEAS:
+==============
+
+- top-level Makefile calls sub-make on each directory and exports variables to them
+- test manifest file to determine which tests are run in a 'test all' build
+- generate_tests.py generates a TESTS.c and TESTS.h file for each folder, which is
+	included in the test.c file in the top-level folder
+
+
+
+test_framework_tool.py
+=======================
+
+- generate_tests subcommand ----> change to generate_group_list
+- generate_group subcommand
+
+- create_test_package <package_name>:
+	create folder, test file, tests.mk, and manifest.json file
+	add it to the test_groups.json file  		DONE
+
+- get_test_groups command (reads test_groups.json file)
+- package add_source_file <package> <file path relative to TLD> LATER
+
+
+
+LATER:
+------
+
+- have multiple test groups per package and json manifest to keep track
+- source files for Unit Under Test will not be in test package folder,
+	so need way of tracking those (maybe in unit test manifest file)
+
+- integrate into kernel build system
