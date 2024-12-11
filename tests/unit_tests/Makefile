@@ -19,19 +19,31 @@ OBJS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRCS))
 SUB_OBJS=
 
 
+#$(info unit_tests Makefile INCLUDE_DIR = $(INCLUDE_PATHS))
+
+
 # for now, all subdirectories will be built
 # as test directories if the all target is
 # specified
+# grep -v -f <(echo obj) <(ls -d */)
+# add ifeq for TESTS=
 
-ifeq ($(MAKECMDGOALS),all)
-	SUBGOALS=$(patsubst %/, %, $(shell grep -v -f <(echo obj) <(ls -d */)))
+comma:=,
+space:= $(subst ,, )
+
+ifeq ($(MAKECMDGOALS),default)
+	SUBGOALS= $(subst $(comma), $(space), $(TESTS))
+else ifeq ($(MAKECMDGOALS),all)
+	SUBGOALS= $(shell ./test_framework_tool.py get_test_packages)
 else ifeq ($(MAKECMDGOALS),)
-	SUBGOALS=$(patsubst %/, %, $(shell grep -v -f <(echo obj) <(ls -d */)))
+	SUBGOALS= $(subst $(comma), $(space), $(TESTS))
 else ifeq ($(MAKECMDGOALS),clean)
 	SUBGOALS=
 else
-	SUBGOALS=$(MAKECMDGOALS)
+	SUBGOALS= $(subst $(comma), $(space), $(TESTS))
 endif
+
+$(info SUBGOALS is $(SUBGOALS))
 
 
 
@@ -49,27 +61,29 @@ export TARGET
 
 
 
-.PHONY: setup gen_test all $(SUBGOALS) clean
+.PHONY: setup gen_test default all $(SUBGOALS) clean
 
 
 
 # prerequisites must be in this order
-all: setup $(SUBGOALS) gen_test $(OBJS)
+default: $(SUBGOALS) gen_test $(OBJS)
 	$(MAKE) -f link.mk link
 
+all: $(SUBGOALS) gen_test $(OBJS)
+	$(MAKE) -f link.mk link
 
 setup:
 	if [ ! -d $(OBJ_DIR) ]; then mkdir $(OBJ_DIR); fi
 
 
-$(SUBGOALS):
+$(SUBGOALS): setup
 	python3 $(GEN_TEST_SCRIPT) generate_group $@
 	$(MAKE) -C $@ -f tests.mk $(SUBTARGET)
 
 
 
 gen_test:
-	python3 $(GEN_TEST_SCRIPT) generate_group_list
+	python3 $(GEN_TEST_SCRIPT) generate_group_list $(SUBGOALS)
 	
 
 

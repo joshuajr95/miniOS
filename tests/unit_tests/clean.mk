@@ -4,8 +4,9 @@ SHELL := /bin/bash
 
 CLEAN_TARGET=clean
 
+# grep -v -f <(echo obj) <(ls -d */)
 
-SUBGOALS=$(patsubst %/, %, $(shell grep -v -f <(echo obj) <(ls -d */)))
+SUBGOALS=$(patsubst %/, %, $(shell ./test_framework_tool.py get_test_packages))
 
 
 #$(foreach subgoal, $(SUBGOALS), $(eval SUB_OBJS += $(patsubst %.o, $(OBJ_DIR)/$(subgoal)/%.o, $(shell ls $(OBJ_DIR)/$(subgoal)))))

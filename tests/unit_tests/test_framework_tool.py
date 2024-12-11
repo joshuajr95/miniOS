@@ -134,9 +134,9 @@ def generate_test_group_file_from_test_function_list(manifest_file: str, tests: 
 
 
 
-def generate_test_group_list() -> List[str]:
+def generate_test_group_list(subdirs: List[str]) -> List[str]:
 
-	subdirs: List[str] = get_test_dirs()
+	#subdirs: List[str] = get_test_dirs()
 	test_groups: List[str] = []
 
 	for dir in subdirs:
@@ -197,32 +197,34 @@ def create_submake(subfolder: str):
 		f.write("# are all exported from top-level Makefile\n\n\n")
 
 		f.write("CURRENT_DIR=$(shell basename $$(pwd))\n")
+		f.write("TEST_GROUP_NAME=$(CURRENT_DIR)_GROUP\n")
 		f.write("TEST_GROUP_FILE=$(patsubst %, %.c, $(TEST_GROUP_NAME))\n")
 		f.write("TEST_GROUP_HEADER=$(patsubst %, %.h, $(TEST_GROUP_NAME))\n\n")
-		f.write("INCLUDE_DIRS=..\n\n\n\n\n")
+		f.write("INCLUDE_PATHS += -I..\n\n\n\n\n")
 
-		f.write("#########################\n")
-		f.write("# Add source files here #\n")
-		f.write("#########################\n\n")
+		f.write("SRCS = $(shell cd .. ; ./test_framework_tool.py get_source_file_paths $(CURRENT_DIR); cd $(CURRENT_DIR))\n")
+		f.write(f"TEST_SRCS =\ttest_{subfolder}.c\t\t\t\\\n")
+		f.write("\t\t\t$(TEST_GROUP_FILE)\n\n\n")
 
-		f.write(f"SRCS =\ttest_{subfolder}.c\t\t\t\\\n")
-		f.write("\t\t$(TEST_GROUP_FILE)\n\n\n")
-
-		f.write("OBJS = $(patsubst %.c, ../$(OBJ_DIR)/$(CURRENT_DIR)/%.o, $(SRCS))\n\n\n\n\n")
+		f.write("TEST_OBJS = $(patsubst %.c, ../$(OBJ_DIR)/$(CURRENT_DIR)/%.o, $(TEST_SRCS))\n")
+		f.write("OBJS = $(patsubst %.c, %.o, $(SRCS))\n\n\n\n\n")
 
 		f.write("########################\n")
 		f.write("# Targets for sub-make #\n")
 		f.write("########################\n\n")
 		f.write(".PHONY: clean setup\n\n\n")
 
-		f.write("$(SUBTARGET): setup $(OBJS)\n\n\n")
+		f.write("$(SUBTARGET): setup $(OBJS) $(TEST_OBJS)\n\n\n")
 
 		f.write("# create subfolder in object file folder for this folder's object files\n")
 		f.write("setup:\n")
 		f.write("\tif [ ! -d ../$(OBJ_DIR)/$(CURRENT_DIR) ]; then mkdir ../$(OBJ_DIR)/$(CURRENT_DIR); fi\n\n")
 
-		f.write("$(OBJS): ../$(OBJ_DIR)/$(CURRENT_DIR)/%.o: %.c\n")
-		f.write("\t$(CC) $(CFLAGS) -I$(INCLUDE_DIRS) -c $< -o $@\n\n\n\n")
+		f.write("$(OBJS): %.o: %.c\n")
+		f.write("\t$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o ../$(OBJ_DIR)/$(CURRENT_DIR)/$$(basename $@)\n\n\n\n")
+
+		f.write("$(TEST_OBJS): ../$(OBJ_DIR)/$(CURRENT_DIR)/%.o: %.c\n")
+		f.write("\t$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@\n\n\n")
 
 		f.write("clean:\n")
 		f.write("\tif [ -e $(TEST_GROUP_FILE) ]; then rm $(TEST_GROUP_FILE); fi\n")
@@ -242,9 +244,13 @@ def generate_test_group(subfolder: str) -> None:
 	# get the list of test directories
 	subdirs: List[str] = get_test_dirs()
 
+	if subfolder.endswith("/"):
+		subfolder = subfolder[:-1]
+
 	# check that the test directory exists
 	if subfolder not in subdirs:
 		print(f"Specified subfolder: {subfolder} does not exist")
+		print(f"Subdirectories: {subdirs}.")
 		return
 
 
@@ -260,25 +266,13 @@ def generate_test_group(subfolder: str) -> None:
 
 
 
-def generate_group_list():
-
-	test_groups: List[str] = generate_test_group_list()
+def generate_group_list(groups: List[str]):
+	test_groups: List[str] = generate_test_group_list(groups)
 	generate_manifest_file_from_test_group_list("test.c", test_groups)
 
 
 
 def create_test_package(subfolder: str) -> None:
-
-	# check if package already in test_packages.json
-		# if so, print error and return
-	# check if package path already exists
-		# if so
-			# print that path already exists, choose another name, return
-
-	# create package folder
-	# create test_<package_name>.c file
-	# create tests.mk
-	# create package.json
 
 	with open("test_packages.json", "r") as f:
 		package_object = json.load(f)
@@ -312,7 +306,8 @@ def create_test_package(subfolder: str) -> None:
 		"name": f"{subfolder}",
 		"unit_test_files": [
 			f"test_{subfolder}.c"
-		]
+		],
+		"source_files": []
 	}
 
 	with open(f"{subfolder}/package.json", "w") as f:
@@ -365,6 +360,96 @@ def remove_test_package(subfolder: str) -> None:
 
 
 
+'''
+File path must be relative to root directory.
+'''
+def add_source_file(subfolder: str, file_path: str):
+
+	root_dir: str = None
+	
+	with open("test_packages.json", "r") as f:
+		package_object = json.load(f)
+
+		if subfolder not in package_object["packages"]:
+			print(f"Package \"{subfolder}\" does not exist or is not a package...")
+			return
+
+		root_dir = package_object["root"]
+	
+	if not os.path.exists(root_dir + "/" + file_path):
+		print(f"File: {file_path} does not appear to exist in project with root directory {root_dir}...")
+		return
+	
+	with open(f"{subfolder}/package.json", "r") as f:
+		package_object = json.load(f)
+		if file_path in package_object["source_files"]:
+			print(f"File: {file_path} has already been added to test package {subfolder}")
+			return
+	
+	print(f"Adding file {file_path} to test package {subfolder}...")
+	
+	with open(f"{subfolder}/package.json", "r+") as f:
+		package_object = json.load(f)
+		package_object["source_files"].append(file_path)
+
+		f.seek(0)
+		json.dump(package_object, f, indent=4)
+		f.truncate()
+
+	
+
+def set_root_dir(root: str):
+
+	with open("test_packages.json", "r+") as f:
+		package_object = json.load(f)
+		package_object["root"] = root
+
+		f.seek(0)
+		json.dump(package_object, f, indent=4)
+		f.truncate()
+
+
+def get_source_file_paths(subfolder: str):
+
+	paths: List[str] = []
+	out_str: str = ""
+	root: str = None
+
+	with open("test_packages.json", "r") as f:
+		package_object = json.load(f)
+		root = package_object["root"]
+	
+	with open(f"{subfolder}/package.json", "r") as f:
+		package_object = json.load(f)
+
+		for file in package_object["source_files"]:
+			path: str = root + "/" + file
+			paths.append(path)
+	
+
+	for path in paths:
+		out_str = out_str + path + " "
+	
+	print(out_str)
+
+
+def get_test_packages() -> None:
+
+	packages: List[str] = []
+	out_str: str = ""
+
+	with open("test_packages.json", "r") as f:
+		package_object = json.load(f)
+
+		for package in package_object["packages"]:
+			packages.append(package)
+	
+
+	for package in packages:
+		out_str = out_str + package + " "
+	
+	print(out_str)
+
 
 def main() -> None:
 
@@ -378,15 +463,32 @@ def main() -> None:
 	group_parser.add_argument("subfolder")
 
 	# sub-parser for the create_test_package command
-	group_parser = subparsers.add_parser("create_test_package", help="Creates a unit test package with the given name")
-	group_parser.add_argument("subfolder")
+	create_package_parser = subparsers.add_parser("create_test_package", help="Creates a unit test package with the given name")
+	create_package_parser.add_argument("subfolder")
 
 	# sub-parser for the remove_test_package command
-	group_parser = subparsers.add_parser("remove_test_package", help="Removes a unit test package with the given name")
-	group_parser.add_argument("subfolder")
+	remove_package_parser = subparsers.add_parser("remove_test_package", help="Removes a unit test package with the given name")
+	remove_package_parser.add_argument("subfolder")
+
+	# sub-parser for the add_source_file command
+	add_source_file_parser = subparsers.add_parser("add_source_file", help="Adds the given source file to the given package. Source file path must be relative to source tree root directory.")
+	add_source_file_parser.add_argument("subfolder")
+	add_source_file_parser.add_argument("file_path")
+
+	# sub-parser for the get_source_file_paths command
+	get_file_paths_parser = subparsers.add_parser("get_source_file_paths", help="Gets the paths to all the source files for a given package.")
+	get_file_paths_parser.add_argument("subfolder")
+
+	# sub-parse for the set_root_dir command
+	set_root_parser = subparsers.add_parser("set_root_dir", help="Configures the root directory of the project.")
+	set_root_parser.add_argument("root")
 
 	# sub-parser for the generate_group_list command
-	test_parser = subparsers.add_parser("generate_group_list", help="Generate the top-level test apparatus. Must be run after generate_group.")
+	test_list_parser = subparsers.add_parser("generate_group_list", help="Generate the top-level test apparatus. Must be run after generate_group.")
+	test_list_parser.add_argument("groups", nargs="+")
+
+	# sub-parser for getting the test packages
+	test_package_parser = subparsers.add_parser("get_test_packages", help="Gets the names of all test packages")
 
 	args = parser.parse_args()
 
@@ -395,13 +497,25 @@ def main() -> None:
 		generate_test_group(args.subfolder)
 
 	elif args.command == "generate_group_list":
-		generate_group_list()
+		generate_group_list(args.groups)
 
 	elif args.command == "create_test_package":
 		create_test_package(args.subfolder)
 
 	elif args.command == "remove_test_package":
 		remove_test_package(args.subfolder)
+	
+	elif args.command == "add_source_file":
+		add_source_file(args.subfolder, args.file_path)
+	
+	elif args.command == "get_source_file_paths":
+		get_source_file_paths(args.subfolder)
+	
+	elif args.command == "set_root_dir":
+		set_root_dir(args.root)
+	
+	elif args.command == "get_test_packages":
+		get_test_packages()
 
 	else:
 		print(f"Subcommand: {args.command} not recognized")
