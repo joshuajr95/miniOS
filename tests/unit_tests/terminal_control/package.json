@@ -1,0 +1,9 @@
+{
+    "name": "terminal_control",
+    "unit_test_files": [
+        "test_terminal_control.c"
+    ],
+    "source_files": [
+        "kernel/shell/terminal_control.c"
+    ]
+}

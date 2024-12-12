@@ -1,0 +1,9 @@
+{
+    "name": "scrollback_buffer",
+    "unit_test_files": [
+        "test_scrollback_buffer.c"
+    ],
+    "source_files": [
+        "kernel/shell/scrollback_buffer.c"
+    ]
+}
