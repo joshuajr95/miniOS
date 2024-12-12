@@ -3,27 +3,33 @@
 #include "test_group.h"
 
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 
 
-bool run_test_group(test_group_t *group)
+bool run_test_group(char *group_executable_path)
 {
 	bool result;
 
+	
+	pid_t pid = fork();
 
-	for(int i = 0; i < group->num_tests; i++)
+	if(pid == -1)
 	{
+		printf("Error occurred forking child process %s...\n", group_executable_path);
+	}
+	if(pid == 0)
+	{
+		char *argv[] = {group_executable_path, NULL};
+		fflush(stdout);
+		int status = execvp(group_executable_path, argv);
 
-		result = group->funcs[i]();
-
-		if(result)
-		{
-			printf("\tTest %d \033[92mPASSED\033[0m in function \"%s\" ...\n", i, group->func_names[i]);
-		}
-		else
-		{
-			printf("\tTest %d \033[91mFAILED\033[0m in function \"%s\" ...\n", i, group->func_names[i]);
-		}
+	}
+	else
+	{
+		int status;
+		waitpid(pid, &status, 0);
 	}
 
 

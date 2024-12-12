@@ -24,12 +24,10 @@ export SCRIPT_DIR
 export BASEDIR
 export INCLUDE_PATHS
 
-# Microchip provides toolchain for PIC32 MCUs
-# Use the g++ compiler since it allows for overloading
-# and the use of namespaces, which is useful for
-# the device driver subsystem
+
+# different compilers used for MCU target and unit test target
 ifeq ($(firstword $(MAKECMDGOALS)),unit_tests)
-	SUBGOAL= $(lastword $(MAKECMDGOALS))
+	SUBGOALS= $(wordlist 2, 100, $(MAKECMDGOALS))
 	CC=gcc
 else
 	CC = xc32-g++
@@ -67,14 +65,7 @@ $(API_DIR):
 
 
 
-# can either specify the tests to run with TESTS=<comma-separated list of tests>
-# or otherwise the 'all' target
-ifeq ($(TESTS),)
 unit_tests:
 	cd $(UNIT_TEST_DIR); python3 $(UNIT_TEST_DIR)/$(UNIT_TEST_TOOL) set_root_dir $(BASEDIR)
-	$(MAKE) -C $(UNIT_TEST_DIR) $(SUBGOAL)
-else
-unit_tests:
-	cd $(UNIT_TEST_DIR); python3 $(UNIT_TEST_DIR)/$(UNIT_TEST_TOOL) set_root_dir $(BASEDIR)
-	$(MAKE) -C $(UNIT_TEST_DIR) TESTS=$(TESTS) default
-endif
+	$(MAKE) -C $(UNIT_TEST_DIR) $(SUBGOALS)
+

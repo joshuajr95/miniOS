@@ -16,10 +16,10 @@ void run_test_groups()
 
 	for(int i = 0; i < num_test_groups; i++)
 	{
-		printf("\033[94mRunning test group %d. Group name: %s\033[0m\n", i, test_groups_to_run[i]->group_name);
+		printf("\033[94mRunning test group %d. Group name: %s\033[0m\n", i, test_group_names[i]);
 		printf("--------------------------------------------------------\n");
 
-		result = run_test_group(test_groups_to_run[i]);
+		result = run_test_group(test_group_executables[i]);
 
 		printf("--------------------------------------------------------\n\n\n\n");
 	}

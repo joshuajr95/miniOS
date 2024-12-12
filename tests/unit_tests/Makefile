@@ -31,16 +31,14 @@ SUB_OBJS=
 comma:=,
 space:= $(subst ,, )
 
-ifeq ($(MAKECMDGOALS),default)
-	SUBGOALS= $(subst $(comma), $(space), $(TESTS))
-else ifeq ($(MAKECMDGOALS),all)
+ifeq ($(MAKECMDGOALS),all)
 	SUBGOALS= $(shell ./test_framework_tool.py get_test_packages)
 else ifeq ($(MAKECMDGOALS),)
-	SUBGOALS= $(subst $(comma), $(space), $(TESTS))
+	SUBGOALS= $(shell ./test_framework_tool.py get_test_packages)
 else ifeq ($(MAKECMDGOALS),clean)
 	SUBGOALS=
 else
-	SUBGOALS= $(subst $(comma), $(space), $(TESTS))
+	SUBGOALS= $(MAKECMDGOALS)
 endif
 
 $(info SUBGOALS is $(SUBGOALS))
@@ -61,25 +59,27 @@ export TARGET
 
 
 
-.PHONY: setup gen_test default all $(SUBGOALS) clean
+.PHONY: setup gen_test default all $(SUBGOALS) clean link
 
 
 
 # prerequisites must be in this order
-default: $(SUBGOALS) gen_test $(OBJS)
-	$(MAKE) -f link.mk link
+default: $(SUBGOALS)
+#	$(MAKE) -f link.mk link
 
-all: $(SUBGOALS) gen_test $(OBJS)
-	$(MAKE) -f link.mk link
+all: $(SUBGOALS)
+#	$(MAKE) -f link.mk link
 
 setup:
 	if [ ! -d $(OBJ_DIR) ]; then mkdir $(OBJ_DIR); fi
 
 
-$(SUBGOALS): setup
+$(SUBGOALS): setup main
 	python3 $(GEN_TEST_SCRIPT) generate_group $@
 	$(MAKE) -C $@ -f tests.mk $(SUBTARGET)
 
+main: gen_test $(OBJS)
+	$(CC) $(OBJS) -o $(TARGET)
 
 
 gen_test:

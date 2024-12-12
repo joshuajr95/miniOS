@@ -24,7 +24,7 @@ typedef struct
 } test_group_t;
 
 
-bool run_test_group(test_group_t *group);
+bool run_test_group(char *group_executable_path);
 
 
 

@@ -102,6 +102,7 @@ def generate_test_group_file_from_test_function_list(manifest_file: str, tests: 
 		file_handle.write("#include \"../test_group.h\"\n")
 		file_handle.write(f"#include \"{manifest_file}.h\"\n\n\n")
 
+		file_handle.write("#include <stdio.h>\n")
 		file_handle.write("#include <stdbool.h>\n\n\n")
 
 
@@ -131,62 +132,50 @@ def generate_test_group_file_from_test_function_list(manifest_file: str, tests: 
 		file_handle.write(f"\t.group_name = \"{folder}_test_group\"\n")
 		file_handle.write("};\n\n\n")
 
+		file_handle.write("int main(int argc, char *argv[])\n")
+		file_handle.write("{\n")
+		file_handle.write("\tbool result;\n\n\n")
+		file_handle.write(f"\tfor(int i = 0; i < {folder}_test_group.num_tests; i++)\n")
+		file_handle.write("\t{\n")
+		file_handle.write(f"\t\tresult = {folder}_test_group.funcs[i]();\n\n")
+		file_handle.write("\t\tif(result)\n")
+		file_handle.write(f"\t\t\tprintf(\"\\tTest %d \\033[92mPASSED\\033[0m in function \\\"%s\\\" ...\\n\", i, {folder}_test_group.func_names[i]);\n")
+		file_handle.write("\t\telse\n")
+		file_handle.write(f"\t\t\tprintf(\"\\tTest %d \\033[91mFAILED\\033[0m in function \\\"%s\\\" ...\\n\", i, {folder}_test_group.func_names[i]);\n\n")
+		file_handle.write("\t}\n")
+
+		file_handle.write("\treturn 0;\n")
+		file_handle.write("}\n\n")
 
 
 
-def generate_test_group_list(subdirs: List[str]) -> List[str]:
-
-	#subdirs: List[str] = get_test_dirs()
-	test_groups: List[str] = []
-
-	for dir in subdirs:
-		group_name: str = get_test_group_name(dir)
-		test_group_file: str = dir + f"/{group_name}.c"
-		if os.path.exists(test_group_file):
-			test_group_name: str = dir + "_test_group"
-			test_groups.append(test_group_name)
-
-	return test_groups
 
 
-
-
-def generate_manifest_file_from_test_group_list(manifest_file: str, test_groups: List[str]) -> None:
+def generate_manifest_file_from_test_group_list(manifest_file: str, groups: List[str]) -> None:
 	
 	with open(manifest_file, "w") as file_handle:
 
 		# generate warning and help message
 		file_handle.write("// THIS FILE IS AUTO-GENERATED. DO NOT EDIT!!!\n")
 		file_handle.write("// See generate_tests.py for details\n\n\n")
-
-
 		file_handle.write("#include \"test.h\"\n\n\n")
-
-
-		subdirs: List[str] = get_test_dirs()
-
-
-		#for dir in subdirs:
-		#	group_name: str = get_test_group_name(dir)
-		#	file_handle.write(f"#include \"{dir}/{group_name}.h\"\n")
-
-		#file_handle.write("\n\n")
-
-
-
-		for group in test_groups:
-			file_handle.write(f"extern test_group_t {group};\n")
 
 		file_handle.write("\n\n")
 
-		file_handle.write("test_group_t *test_groups_to_run[] = {\n")
 
-		for group in test_groups:
-			file_handle.write(f"\t&{group},\n")
-
+		file_handle.write("char *test_group_names[] = {\n")
+		for group in groups:
+			file_handle.write(f"\t\"{group}\",\n")
 		file_handle.write("};\n\n")
 
-		file_handle.write(f"int num_test_groups = {len(test_groups)};\n\n\n")
+
+		file_handle.write("char *test_group_executables[] = {\n")
+		for group in groups:
+			file_handle.write(f"\t\"obj/{group}/{group}_main\",\n")
+		file_handle.write("};\n\n")
+
+
+		file_handle.write(f"int num_test_groups = {len(groups)};\n\n\n")
 
 
 
@@ -199,36 +188,43 @@ def create_submake(subfolder: str):
 		f.write("CURRENT_DIR=$(shell basename $$(pwd))\n")
 		f.write("TEST_GROUP_NAME=$(CURRENT_DIR)_GROUP\n")
 		f.write("TEST_GROUP_FILE=$(patsubst %, %.c, $(TEST_GROUP_NAME))\n")
-		f.write("TEST_GROUP_HEADER=$(patsubst %, %.h, $(TEST_GROUP_NAME))\n\n")
+		f.write("TEST_GROUP_HEADER=$(patsubst %, %.h, $(TEST_GROUP_NAME))\n")
+		f.write("EXEC_FILE_NAME=$(CURRENT_DIR)_main\n")
+		f.write("COPY_DIR=cpy\n\n")
 		f.write("INCLUDE_PATHS += -I..\n\n\n\n\n")
 
 		f.write("SRCS = $(shell cd .. ; ./test_framework_tool.py get_source_file_paths $(CURRENT_DIR); cd $(CURRENT_DIR))\n")
+		f.write("BASENAMES=$(foreach src, $(SRCS), $(shell basename $(src)))\n\n")
 		f.write(f"TEST_SRCS =\ttest_{subfolder}.c\t\t\t\\\n")
 		f.write("\t\t\t$(TEST_GROUP_FILE)\n\n\n")
 
 		f.write("TEST_OBJS = $(patsubst %.c, ../$(OBJ_DIR)/$(CURRENT_DIR)/%.o, $(TEST_SRCS))\n")
-		f.write("OBJS = $(patsubst %.c, %.o, $(SRCS))\n\n\n\n\n")
+		f.write("OBJS = $(patsubst %.c, ../$(OBJ_DIR)/$(CURRENT_DIR)/%.o, $(BASENAMES))\n\n\n\n\n")
 
 		f.write("########################\n")
 		f.write("# Targets for sub-make #\n")
 		f.write("########################\n\n")
 		f.write(".PHONY: clean setup\n\n\n")
 
-		f.write("$(SUBTARGET): setup $(OBJS) $(TEST_OBJS)\n\n\n")
+		f.write("$(SUBTARGET): setup $(OBJS) $(TEST_OBJS)\n")
+		f.write("\t$(CC) $(CFLAGS) $(OBJS) $(TEST_OBJS) -o ../$(OBJ_DIR)/$(CURRENT_DIR)/$(EXEC_FILE_NAME)\n\n\n")
 
 		f.write("# create subfolder in object file folder for this folder's object files\n")
 		f.write("setup:\n")
 		f.write("\tif [ ! -d ../$(OBJ_DIR)/$(CURRENT_DIR) ]; then mkdir ../$(OBJ_DIR)/$(CURRENT_DIR); fi\n\n")
+		f.write("\tif [ ! -d $(COPY_DIR) ]; then mkdir $(COPY_DIR); fi\n")
+		f.write("\tfor src in $(SRCS); do cp $$src $(COPY_DIR)/$$(basename $$src); done\n")
 
-		f.write("$(OBJS): %.o: %.c\n")
-		f.write("\t$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o ../$(OBJ_DIR)/$(CURRENT_DIR)/$$(basename $@)\n\n\n\n")
+		f.write("$(OBJS): ../$(OBJ_DIR)/$(CURRENT_DIR)/%.o: $(COPY_DIR)/%.c\n")
+		f.write("\t$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@\n\n\n\n")
 
 		f.write("$(TEST_OBJS): ../$(OBJ_DIR)/$(CURRENT_DIR)/%.o: %.c\n")
 		f.write("\t$(CC) $(CFLAGS) $(INCLUDE_PATHS) -c $< -o $@\n\n\n")
 
 		f.write("clean:\n")
 		f.write("\tif [ -e $(TEST_GROUP_FILE) ]; then rm $(TEST_GROUP_FILE); fi\n")
-		f.write("\tif [ -e $(TEST_GROUP_HEADER) ]; then rm $(TEST_GROUP_HEADER); fi\n\n\n\n")
+		f.write("\tif [ -e $(TEST_GROUP_HEADER) ]; then rm $(TEST_GROUP_HEADER); fi\n")
+		f.write("\tif [ -d $(COPY_DIR) ]; then rm -rf $(COPY_DIR); fi\n\n\n\n")
 
 
 
@@ -267,8 +263,7 @@ def generate_test_group(subfolder: str) -> None:
 
 
 def generate_group_list(groups: List[str]):
-	test_groups: List[str] = generate_test_group_list(groups)
-	generate_manifest_file_from_test_group_list("test.c", test_groups)
+	generate_manifest_file_from_test_group_list("test.c", groups)
 
 
 
