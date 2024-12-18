@@ -98,11 +98,13 @@ int scrollback_buffer_entry_set_new_line(scrollback_buffer_entry_t *entry, char 
 	if(len > MAX_LINE_SIZE) return -1;
 
 
-	for(int i = 0; i < MAX_LINE_SIZE; i++)
-	{
-		entry->line[i] = line[i];
-	}
+	// set the entry to the line and clear chars after end of line
+    int i;
+	for(i = 0; i < len; i++) entry->line[i] = line[i];
+    for(; i < MAX_LINE_SIZE; i++) entry->line[i] = 0;
+    
 	entry->in_use = true;
+    entry->end_index = len;
 
 	return 0;
 }
@@ -269,9 +271,6 @@ int line_delete(current_line_t *line)
 
 
 
-
-// TODO fix cursor
-// TODO maybe move cursor out of scrollback buffer
 int scrollback_buffer_set_current_to_next_entry(scrollback_buffer_t *buffer)
 {
 	if(buffer == NULL ||

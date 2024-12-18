@@ -67,8 +67,8 @@ UNIT_TEST bool test_set_cursor_x_1()
 
     ret = set_cursor_x(5);
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 5);
-    ASSERT(strncmp(buf.terminal_buffer, "\033[0;5H", 64) == 0);
+    ASSERT(cursor.x == 6);
+    ASSERT(strncmp(buf.terminal_buffer, "\033[1;6H", 64) == 0);
 
     return true;
 }
@@ -85,18 +85,14 @@ UNIT_TEST bool test_set_cursor_y_1()
 
     ret = set_cursor(0, 0);
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 0 && cursor.y == 0);
+    ASSERT(cursor.x == 1 && cursor.y == 1);
     trb_clear(&buf);
 
     ret = set_cursor_y(5);
     ASSERT(ret == 0);
-    ASSERT(cursor.y == 5);
+    ASSERT(cursor.y == 6);
 
-    FILE *file_handle = fopen("ANSI_escape.log", "w");
-    fprintf(file_handle, "terminal_buffer: %s\n", buf.terminal_buffer);
-    fclose(file_handle);
-
-    ASSERT(strncmp(buf.terminal_buffer, "\033[5;0H", 64) == 0);
+    ASSERT(strncmp(buf.terminal_buffer, "\033[6;1H", 64) == 0);
 
     return true;
 }
@@ -113,9 +109,9 @@ UNIT_TEST bool test_set_cursor_1()
 
     ret = set_cursor(5, 7);
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 5);
-    ASSERT(cursor.y == 7);
-    ASSERT(strncmp(buf.terminal_buffer, "\033[7;5H", 64) == 0)
+    ASSERT(cursor.x == 6);
+    ASSERT(cursor.y == 8);
+    ASSERT(strncmp(buf.terminal_buffer, "\033[8;6H", 64) == 0)
 
     return true;
 }
@@ -129,26 +125,26 @@ UNIT_TEST bool test_move_cursor_left_and_right_1()
 
     ret = set_cursor(0,0);
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 0);
-    ASSERT(cursor.y == 0);
-    ASSERT(strncmp(buf.terminal_buffer, "\033[0;0H", 64) == 0);
+    ASSERT(cursor.x == 1);
+    ASSERT(cursor.y == 1);
+    ASSERT(strncmp(buf.terminal_buffer, "\033[1;1H", 64) == 0);
     trb_clear(&buf);
 
     ret = move_cursor_left_one();
     ASSERT(ret < 0);
-    ASSERT(cursor.x == 0 && cursor.y == 0);
+    ASSERT(cursor.x == 1 && cursor.y == 1);
 
     ret = move_cursor_right_one();
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 1);
-    ASSERT(cursor.y == 0);
+    ASSERT(cursor.x == 2);
+    ASSERT(cursor.y == 1);
     ASSERT(strncmp(buf.terminal_buffer, "\033[C", 64) == 0);
     trb_clear(&buf);
 
     ret = move_cursor_left_one();
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 0);
-    ASSERT(cursor.y == 0);
+    ASSERT(cursor.x == 1);
+    ASSERT(cursor.y == 1);
     ASSERT(strncmp(buf.terminal_buffer, "\033[D", 64) == 0);
 
     return true;
@@ -163,26 +159,26 @@ UNIT_TEST bool test_move_cursor_up_and_down_1()
 
     ret = set_cursor(0,0);
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 0);
-    ASSERT(cursor.y == 0);
-    ASSERT(strncmp(buf.terminal_buffer, "\033[0;0H", 64) == 0);
+    ASSERT(cursor.x == 1);
+    ASSERT(cursor.y == 1);
+    ASSERT(strncmp(buf.terminal_buffer, "\033[1;1H", 64) == 0);
     trb_clear(&buf);
 
     ret = move_cursor_up_one();
     ASSERT(ret < 0);
-    ASSERT(cursor.x == 0 && cursor.y == 0);
+    ASSERT(cursor.x == 1 && cursor.y == 1);
 
     ret = move_cursor_down_one();
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 0);
-    ASSERT(cursor.y == 1);
+    ASSERT(cursor.x == 1);
+    ASSERT(cursor.y == 2);
     ASSERT(strncmp(buf.terminal_buffer, "\033[B", 64) == 0);
     trb_clear(&buf);
 
     ret = move_cursor_up_one();
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 0);
-    ASSERT(cursor.y == 0);
+    ASSERT(cursor.x == 1);
+    ASSERT(cursor.y == 1);
     ASSERT(strncmp(buf.terminal_buffer, "\033[A", 64) == 0);
 
     return true;
@@ -196,9 +192,9 @@ UNIT_TEST bool test_clear_rest_of_line_1()
     trb_clear(&buf);
     ret = set_cursor(0,0);
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 0);
-    ASSERT(cursor.y == 0);
-    ASSERT(strncmp(buf.terminal_buffer, "\033[0;0H", 64) == 0);
+    ASSERT(cursor.x == 1);
+    ASSERT(cursor.y == 1);
+    ASSERT(strncmp(buf.terminal_buffer, "\033[1;1H", 64) == 0);
     trb_clear(&buf);
 
     ret = clear_rest_of_line();
@@ -217,9 +213,9 @@ UNIT_TEST bool test_clear_entire_screen_1()
     trb_clear(&buf);
     ret = set_cursor(0,0);
     ASSERT(ret == 0);
-    ASSERT(cursor.x == 0);
-    ASSERT(cursor.y == 0);
-    ASSERT(strncmp(buf.terminal_buffer, "\033[0;0H", 64) == 0);
+    ASSERT(cursor.x == 1);
+    ASSERT(cursor.y == 1);
+    ASSERT(strncmp(buf.terminal_buffer, "\033[1;1H", 64) == 0);
     trb_clear(&buf);
 
     ret = clear_rest_of_line();
@@ -230,13 +226,5 @@ UNIT_TEST bool test_clear_entire_screen_1()
     return true;
 }
 
-/*
-UNIT_TEST bool test_ANSI_escape_sequences()
-{
-    print_ANSI_escape_sequences();
-
-    return true;
-}
-*/
 
 

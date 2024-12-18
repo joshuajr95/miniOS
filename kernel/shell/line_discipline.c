@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "line_discipline.h"
 #include "scrollback_buffer.h"
@@ -13,11 +14,9 @@
 
 
 
-escape_sequence_buffer_t escape_sequence_buffer;
-line_discipline_t line_discipline;
 
 
-typedef int (*escape_sequence_callback_t)(void);
+typedef int (*escape_sequence_callback_t)(line_discipline_t*);
 
 
 escape_sequence_callback_t escape_sequence_callbacks[] =
@@ -38,7 +37,7 @@ int line_discipline_set_prompt(line_discipline_t *discipline, char *new_prompt)
 
 	// get the length of the new prompt
 	int len = 0;
-	for(int i = 0; i < MAX_PROMPT_SIZE; i++)
+	for(int i = 0; i <= MAX_PROMPT_SIZE; i++)
 	{
 		if(new_prompt[i] == 0) break;
 		len++;
@@ -54,7 +53,7 @@ int line_discipline_set_prompt(line_discipline_t *discipline, char *new_prompt)
 		if(discipline->prompt[i] == 0) break;
 	}
 
-	// clean rest of line
+	// clear rest of line
 	for(;i < MAX_PROMPT_SIZE; i++)
 	{
 		discipline->prompt[i] = 0;
@@ -83,6 +82,53 @@ int line_discipline_copy_current_line_to_shell_buffer(line_discipline_t *discipl
 	for(int i = 0; i < MAX_LINE_SIZE; i++)
 	{
 		discipline->shell_buffer[i] = discipline->current_line.line[i];
+	}
+
+	return 0;
+}
+
+
+
+int line_discipline_init(line_discipline_t *discipline,
+						int (*process_next_byte)(line_discipline_t *, void *, uint32_t),
+						int (*invoke_shell)(void),
+						char *prompt,
+						char *shell_buffer)
+{
+	if(discipline == NULL ||
+	   process_next_byte == NULL ||
+	   invoke_shell == NULL ||
+	   prompt == NULL ||
+	   shell_buffer == NULL) return -1;
+
+	int ret;
+
+	discipline->process_next_byte = process_next_byte;
+	discipline->invoke_shell = invoke_shell;
+
+	ret = line_discipline_set_prompt(discipline, prompt);
+	if(ret < 0) {printf("Set prompt failed."); return -1;}
+
+	ret = line_discipline_register_shell_buffer(discipline, shell_buffer);
+	if(ret < 0) {printf("Register shell buffer failed."); return -1;}
+
+	ret = escape_sequence_buffer_init(&discipline->escape_buffer);
+	if(ret < 0) {printf("Init esc. seq. buf. failed."); return -1;}
+
+	ret = scrollback_buffer_clear(&discipline->scrollback_buffer);
+	if(ret < 0) {printf("Init scroll buf failed."); return -1;}
+
+	ret = line_init(&discipline->current_line);
+	if(ret < 0) {printf("Line init failed."); return -1;}
+
+	discipline->current_state = LINE_DISCIPLINE_NORMAL_OPERATION;
+
+	set_cursor(0,0);
+	clear_entire_screen();
+
+	for(int i = 0; i < strlen(prompt); i++)
+	{
+		write_to_terminal(prompt[i]);
 	}
 
 	return 0;
@@ -156,27 +202,32 @@ static void copy_from_line_to_scrollback_buffer_entry(scrollback_buffer_entry_t 
 
 
 
-int handle_scroll_up(void)
+int handle_scroll_up(line_discipline_t *discipline)
 {
 	int ret;
 
-	ret = scrollback_buffer_set_current_to_previous_entry(&line_discipline.scrollback_buffer);
+	ret = scrollback_buffer_set_current_to_previous_entry(&discipline->scrollback_buffer);
 
 	if(ret < 0)
 	{
+		// bell means cannot scroll up further
 		char echo = ASCII_BEL;
 		write_to_terminal(echo);
 	}
 	else
 	{
-		scrollback_buffer_entry_t *current_entry = scrollback_buffer_get_current_entry(&line_discipline.scrollback_buffer);
-		copy_from_scrollback_buffer_entry_to_line(current_entry, &line_discipline.current_line);
-		set_cursor_x(strnlen(line_discipline.prompt, MAX_PROMPT_SIZE));
+		// copy new entry to be displayed to line
+		scrollback_buffer_entry_t *current_entry = scrollback_buffer_get_current_entry(&discipline->scrollback_buffer);
+		copy_from_scrollback_buffer_entry_to_line(current_entry, &discipline->current_line);
+
+		// clear line
+		set_cursor_x(strnlen(discipline->prompt, MAX_PROMPT_SIZE));
 		clear_rest_of_line();
 
-		for(int i = 0; i < line_discipline.current_line.end_index; i++)
+		// write new line to terminal screen
+		for(int i = 0; i < discipline->current_line.end_index; i++)
 		{
-			write_to_terminal(line_discipline.current_line.line[i]);
+			write_to_terminal(discipline->current_line.line[i]);
 		}
 	}
 
@@ -184,27 +235,32 @@ int handle_scroll_up(void)
 }
 
 
-int handle_scroll_down(void)
+int handle_scroll_down(line_discipline_t *discipline)
 {
 	int ret;
 
-	ret = scrollback_buffer_set_current_to_next_entry(&line_discipline.scrollback_buffer);
+	ret = scrollback_buffer_set_current_to_next_entry(&discipline->scrollback_buffer);
 
 	if(ret < 0)
 	{
+		// bell if unable to scroll down further
 		char echo = ASCII_BEL;
 		write_to_terminal(echo);
 	}
 	else
 	{
-		scrollback_buffer_entry_t *current_entry = scrollback_buffer_get_current_entry(&line_discipline.scrollback_buffer);
-		copy_from_scrollback_buffer_entry_to_line(current_entry, &line_discipline.current_line);
-		set_cursor_x(strnlen(line_discipline.prompt, MAX_PROMPT_SIZE));
+		// get the text of the new line to be displayed
+		scrollback_buffer_entry_t *current_entry = scrollback_buffer_get_current_entry(&discipline->scrollback_buffer);
+		copy_from_scrollback_buffer_entry_to_line(current_entry, &discipline->current_line);
+		
+		// clear line on terminal screen
+		set_cursor_x(strnlen(discipline->prompt, MAX_PROMPT_SIZE));
 		clear_rest_of_line();
 
-		for(int i = 0; i < line_discipline.current_line.end_index; i++)
+		// write new line to terminal screen
+		for(int i = 0; i < discipline->current_line.end_index; i++)
 		{
-			write_to_terminal(line_discipline.current_line.line[i]);
+			write_to_terminal(discipline->current_line.line[i]);
 		}
 	}
 	
@@ -212,12 +268,14 @@ int handle_scroll_down(void)
 }
 
 
-int handle_scroll_left(void)
+int handle_scroll_left(line_discipline_t *discipline)
 {
 	int ret;
 
-	ret = line_move_cursor_left(&line_discipline.current_line);
+	// move cursor left in current line
+	ret = line_move_cursor_left(&discipline->current_line);
 
+	// move cursor left on terminal screen, or send bell if unable
 	if(ret < 0)
 	{
 		char echo = ASCII_BEL;
@@ -232,12 +290,14 @@ int handle_scroll_left(void)
 }
 
 
-int handle_scroll_right(void)
+int handle_scroll_right(line_discipline_t *discipline)
 {
 	int ret;
 
-	ret = line_move_cursor_right(&line_discipline.current_line);
+	// move cursor right in the current line
+	ret = line_move_cursor_right(&discipline->current_line);
 
+	// move cursor right on terminal screen, or send bell if unable
 	if(ret < 0)
 	{
 		char echo = ASCII_BEL;
@@ -253,34 +313,40 @@ int handle_scroll_right(void)
 }
 
 
-int handle_delete(void)
+int handle_delete(line_discipline_t *discipline)
 {
 	int ret;
 
-	ret = line_delete(&line_discipline.current_line);
+	ret = line_delete(&discipline->current_line);
 
 	if(ret < 0)
 	{
+		// could not delete. Line might be empty or just at beginning.
+		// either way, send bell
 		char echo = ASCII_BEL;
 		write_to_terminal(echo);
 	}
 	else
 	{
-		if(line_discipline.scrollback_buffer.current == line_discipline.scrollback_buffer.latest)
+		// syncing between line and scrollback buffer only occurs on latest line
+		if(discipline->scrollback_buffer.current == discipline->scrollback_buffer.latest)
 		{
-			scrollback_buffer_entry_t *current_entry = scrollback_buffer_get_current_entry(&line_discipline.scrollback_buffer);
-			scrollback_buffer_entry_delete(current_entry, line_discipline.current_line.cursor+1);
+			scrollback_buffer_entry_t *current_entry = scrollback_buffer_get_current_entry(&discipline->scrollback_buffer);
+			ret = scrollback_buffer_entry_delete(current_entry, discipline->current_line.cursor);
 		}
 
-		int next_cursor = strnlen(line_discipline.prompt, MAX_PROMPT_SIZE) + line_discipline.current_line.cursor;
-		set_cursor_x(strnlen(line_discipline.prompt, MAX_PROMPT_SIZE));
+		// send escape sequences to terminal to set cursor and clear line after the end of the prompt
+		int next_cursor = strnlen(discipline->prompt, MAX_PROMPT_SIZE) + discipline->current_line.cursor;
+		set_cursor_x(strnlen(discipline->prompt, MAX_PROMPT_SIZE));
 		clear_rest_of_line();
 
-		for(int i = 0; i < line_discipline.current_line.end_index; i++)
+		// write the line (with 1 less char) to terminal
+		for(int i = 0; i < discipline->current_line.end_index; i++)
 		{
-			write_to_terminal(line_discipline.current_line.line[i]);
+			write_to_terminal(discipline->current_line.line[i]);
 		}
 
+		// since writing shifts the cursor, need to reset it to where it was
 		set_cursor_x(next_cursor);
 	}
 
@@ -288,54 +354,53 @@ int handle_delete(void)
 }
 
 
-int handle_return(void)
+int handle_return(line_discipline_t *discipline)
 {
 	int ret;
 
-	scrollback_buffer_entry_t *latest_entry = scrollback_buffer_get_latest_entry(&line_discipline.scrollback_buffer);
-	copy_from_line_to_scrollback_buffer_entry(latest_entry, &line_discipline.current_line);
+	scrollback_buffer_entry_t *latest_entry = scrollback_buffer_get_latest_entry(&discipline->scrollback_buffer);
+	copy_from_line_to_scrollback_buffer_entry(latest_entry, &discipline->current_line);
 
-	scrollback_buffer_set_latest_to_next_entry(&line_discipline.scrollback_buffer);
-	scrollback_buffer_set_current_entry(&line_discipline.scrollback_buffer, line_discipline.scrollback_buffer.latest);
-	latest_entry = scrollback_buffer_get_latest_entry(&line_discipline.scrollback_buffer);
+	scrollback_buffer_set_latest_to_next_entry(&discipline->scrollback_buffer);
+	scrollback_buffer_set_current_entry(&discipline->scrollback_buffer, discipline->scrollback_buffer.latest);
+	latest_entry = scrollback_buffer_get_latest_entry(&discipline->scrollback_buffer);
 	scrollback_buffer_entry_init(latest_entry);
 	scrollback_buffer_entry_set_in_use(latest_entry);
 
 	// copy to shell buffer
-	line_discipline_copy_current_line_to_shell_buffer(&line_discipline);
+	line_discipline_copy_current_line_to_shell_buffer(discipline);
+	line_init(&discipline->current_line);
 
-	line_init(&line_discipline.current_line);
-
-	move_cursor_down_one();
-	set_cursor_x(0);
+	// set cursor to beginning of next line
+	set_cursor(0, get_cursor_y() + 1);
 
 	// invoke shell
-	line_discipline.invoke_shell();
+	discipline->invoke_shell();
 
-
-	for(int i = 0; i < strnlen(line_discipline.prompt, MAX_PROMPT_SIZE); i++)
+	for(int i = 0; i < strnlen(discipline->prompt, MAX_PROMPT_SIZE); i++)
 	{
-		write_to_terminal(line_discipline.prompt[i]);
+		write_to_terminal(discipline->prompt[i]);
 	}
 
 	return 0;
 }
 
 
-int process_ANSI_escape_sequence(char data)
+int process_ANSI_escape_sequence(line_discipline_t *discipline, char data)
 {
 	int ret;
 
-	ret = escape_sequence_buffer_insert(&line_discipline.escape_buffer, data);
-
+	// insert next char in escape sequence
+	ret = escape_sequence_buffer_insert(&discipline->escape_buffer, data);
 	if(ret < 0) return -1;
 
-	int index = match_escape_sequence(line_discipline.escape_buffer.buffer);
-
+	int index = match_escape_sequence(discipline->escape_buffer.buffer);
 	if(index >= 0 && escape_sequence_callbacks[index] != NULL)
 	{
-		ret = escape_sequence_callbacks[index]();
-		ret &= escape_sequence_buffer_clear(&line_discipline.escape_buffer);
+		// escape sequence found. Invoke callback
+		ret = escape_sequence_callbacks[index](discipline);
+		ret &= escape_sequence_buffer_clear(&discipline->escape_buffer);
+		discipline->current_state = LINE_DISCIPLINE_NORMAL_OPERATION;
 	}
 	else
 	{
@@ -346,7 +411,7 @@ int process_ANSI_escape_sequence(char data)
 }
 
 
-int process_ASCII_control_char(char data)
+int process_ASCII_control_char(line_discipline_t *discipline, char data)
 {
 	switch(data)
     {
@@ -355,8 +420,9 @@ int process_ASCII_control_char(char data)
             break;
 
         case ASCII_ESC:
-            line_discipline.current_state = LINE_DISCIPLINE_PROCESS_ANSI_ESCAPE;
-            escape_sequence_buffer_insert(&line_discipline.escape_buffer, data);
+			// start escape sequence
+            discipline->current_state = LINE_DISCIPLINE_PROCESS_ANSI_ESCAPE;
+            escape_sequence_buffer_insert(&discipline->escape_buffer, data);
             break;
 
         case ASCII_DEL:
@@ -364,7 +430,7 @@ int process_ASCII_control_char(char data)
             break;
 
         case ASCII_BS:
-            handle_delete();
+            handle_delete(discipline);
             break;
 
         case ASCII_TAB:
@@ -372,11 +438,11 @@ int process_ASCII_control_char(char data)
             break;
 
         case ASCII_LF:
-            handle_return();
+            handle_return(discipline);
             break;
 
         case ASCII_CR:
-            handle_return();
+            handle_return(discipline);
             break;
 
         default:
@@ -387,11 +453,11 @@ int process_ASCII_control_char(char data)
 }
 
 
-int process_printable_ASCII_char(char data)
+int process_printable_ASCII_char(line_discipline_t *discipline, char data)
 {
 	int ret;
 
-	ret = line_insert(&line_discipline.current_line, data);
+	ret = line_insert(&discipline->current_line, data);
 
 	if(ret < 0)
 	{
@@ -402,49 +468,65 @@ int process_printable_ASCII_char(char data)
 	else
 	{
 		// only sync between current line and scrollback buffer if viewing latest entry
-		if(line_discipline.scrollback_buffer.current == line_discipline.scrollback_buffer.latest)
+		if(discipline->scrollback_buffer.current == discipline->scrollback_buffer.latest)
 		{
-			scrollback_buffer_entry_t *latest_entry = scrollback_buffer_get_latest_entry(&line_discipline.scrollback_buffer);
-			scrollback_buffer_entry_insert(latest_entry, line_discipline.current_line.cursor-1, data);
+			scrollback_buffer_entry_t *latest_entry = scrollback_buffer_get_latest_entry(&discipline->scrollback_buffer);
+			scrollback_buffer_entry_insert(latest_entry, discipline->current_line.cursor-1, data);
 		}
 
 		// echo back to terminal (change in future to allow disabling of input echoing)
-		write_to_terminal(data);
+		if(discipline->current_line.cursor < discipline->current_line.end_index)
+		{
+			int next_cursor = strlen(discipline->prompt) + discipline->current_line.cursor;
+			set_cursor_x(next_cursor-1);
+			clear_rest_of_line();
+
+			for(int i = discipline->current_line.cursor - 1; i < discipline->current_line.end_index; i++)
+			{
+				write_to_terminal(discipline->current_line.line[i]);
+			}
+
+			set_cursor_x(next_cursor);
+		}
+		else
+		{
+			write_to_terminal(data);
+		}
 	}
 
 	return 0;
 }
 
 
-int process_ASCII_char(char data)
+int process_ASCII_char(line_discipline_t *discipline, char data)
 {
 	if(data < ASCII_DEL && data > ASCII_US)
     {
         // ASCII range 32-126 is printable chars
-        process_printable_ASCII_char(data);
+        process_printable_ASCII_char(discipline, data);
     }
     else
     {
         // process ASCII control codes
-        process_ASCII_control_char(data);
+        process_ASCII_control_char(discipline, data);
     }
 
 	return 0;
 }
 
 
-int process_next_byte(void *buffer, uint32_t size)
+int process_next_byte(line_discipline_t *discipline, void *buffer, uint32_t size)
 {
 	char data = *((char *)buffer);
 
-    switch(line_discipline.current_state)
+    switch(discipline->current_state)
     {
         case LINE_DISCIPLINE_PROCESS_ANSI_ESCAPE:
-            process_ANSI_escape_sequence(data);
+            process_ANSI_escape_sequence(discipline, data);
             break;
 
         case LINE_DISCIPLINE_NORMAL_OPERATION:
-            process_ASCII_char(data);
+            process_ASCII_char(discipline, data);
             break;
 
         default:

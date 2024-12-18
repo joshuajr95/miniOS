@@ -256,14 +256,14 @@ typedef struct
  * Converts from the current buffer entry
  * number to the index into the table.
  */
-#define CURRENT_INDEX(_buffer)      ((_buffer)->current%SCROLLBACK_BUFFER_NUM_ENTRIES)
+#define CURRENT_INDEX(_buffer)      (((_buffer)->current)%SCROLLBACK_BUFFER_NUM_ENTRIES)
 
 
 /**
  * Converts from the latest buffer entry
  * number to its index into the table.
  */
-#define LATEST_INDEX(_buffer)       ((_buffer)->latest%SCROLLBACK_BUFFER_NUM_ENTRIES)
+#define LATEST_INDEX(_buffer)       (((_buffer)->latest)%SCROLLBACK_BUFFER_NUM_ENTRIES)
 
 
 
@@ -349,33 +349,6 @@ scrollback_buffer_entry_t *scrollback_buffer_get_latest_entry(scrollback_buffer_
  * @return Pointer to given entry. NULL if error.
  */
 scrollback_buffer_entry_t *scrollback_buffer_get_entry(scrollback_buffer_t *buffer, int entry_number);
-
-
-
-/**
- * 
- * 
- */
-//int scrollback_buffer_scroll_back(scrollback_buffer_t *buffer);
-
-
-
-/**
- * 
- * 
- */
-//int scrollback_buffer_scroll_forward(scrollback_buffer_t *buffer);
-
-
-
-/**
- * 
- * 
- */
-//int scrollback_buffer_process_enter(scrollback_buffer_t *buffer);
-
-
-
 
 
 #endif

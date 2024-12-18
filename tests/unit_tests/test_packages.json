@@ -1,3 +1,8 @@
 {
-    "packages": []
+    "packages": [
+        "scrollback_buffer",
+        "line_discipline",
+        "terminal_control"
+    ],
+    "root": "/Users/joshuajacobs-rebhun/Desktop/miniOS"
 }

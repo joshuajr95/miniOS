@@ -44,7 +44,10 @@ int match_escape_sequence(char *esc_seq)
 
 
 
-cursor_t cursor;
+cursor_t cursor = {
+    .x = 1,
+    .y = 1
+};
 
 
 
@@ -53,7 +56,7 @@ int set_cursor_x(int x_coordinate)
     if(x_coordinate < 0) return -1;
 
     // set the x coordinate
-    cursor.x = x_coordinate;
+    cursor.x = x_coordinate+1;
 
     // build escape sequence with new x coordinate
     char *esc_seq = ANSI_escape_sequences[ANSI_ESCAPE_SET_CURSOR];
@@ -75,7 +78,7 @@ int set_cursor_y(int y_coordinate)
     if(y_coordinate < 0) return -1;
 
     // set the y coordinate
-    cursor.y = y_coordinate;
+    cursor.y = y_coordinate+1;
 
     // build escape sequence with new y coordinate
     char *esc_seq = ANSI_escape_sequences[ANSI_ESCAPE_SET_CURSOR];
@@ -94,13 +97,13 @@ int set_cursor_y(int y_coordinate)
 
 int get_cursor_x()
 {
-    return cursor.x;
+    return cursor.x-1;
 }
 
 
 int get_cursor_y()
 {
-    return cursor.y;
+    return cursor.y-1;
 }
 
 
@@ -109,8 +112,8 @@ int set_cursor(int x_coordinate, int y_coordinate)
     if(x_coordinate < 0 || y_coordinate < 0) return -1;
 
     // set x and y coordinates
-    cursor.x = x_coordinate;
-    cursor.y = y_coordinate;
+    cursor.x = x_coordinate+1;
+    cursor.y = y_coordinate+1;
 
     // build escape sequence with x and y coordinates
     char *esc_seq = ANSI_escape_sequences[ANSI_ESCAPE_SET_CURSOR];
@@ -130,7 +133,7 @@ int set_cursor(int x_coordinate, int y_coordinate)
 
 int move_cursor_left_one()
 {
-    if(cursor.x <= 0) return -1;
+    if(cursor.x <= 1) return -1;
 
     cursor.x--;
 
@@ -164,7 +167,7 @@ int move_cursor_right_one()
 
 int move_cursor_up_one()
 {
-    if(cursor.y <= 0) return -1;
+    if(cursor.y <= 1) return -1;
 
     cursor.y--;
 
@@ -228,12 +231,16 @@ int clear_entire_screen()
 
 
 
+
 int write_to_terminal(char data)
 {
     if(data > 127) return -1;
 
     terminal_send_byte(data);
-    cursor.x++;
+
+    // only increment if printable character
+    if((data > 31 && data < 127)) cursor.x++;
+    
     return 0;
 }
 

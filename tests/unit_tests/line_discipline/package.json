@@ -1,0 +1,11 @@
+{
+    "name": "line_discipline",
+    "unit_test_files": [
+        "test_line_discipline.c"
+    ],
+    "source_files": [
+        "kernel/shell/line_discipline.c",
+        "kernel/shell/scrollback_buffer.c",
+        "kernel/shell/terminal_control.c"
+    ]
+}

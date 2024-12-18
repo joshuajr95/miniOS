@@ -133,7 +133,7 @@ typedef enum
  *
  * Control block for the line discipline.
  */
-typedef struct 
+typedef struct line_discipline
 {
 	/**
 	 * Stores the current state of the line discipline
@@ -161,7 +161,6 @@ typedef struct
 	 */
 	char prompt[MAX_PROMPT_SIZE];
 
-
 	/**
 	 * Buffer for holding the current command
 	 * for the shell associated with this
@@ -169,8 +168,23 @@ typedef struct
 	 */
 	char *shell_buffer;
 
+	/**
+	 * Shell invocation function. Called when the
+	 * line discipline processes the return/enter key.
+	 */
+	int (*invoke_shell)(void);
 
-	int (*invoke_shell)();
+	/**
+	 * Callback function for serial receive. This is
+	 * registered with the serial driver (typically a
+	 * UART) as a receive callback. The first parameter
+	 * is a pointer to the line discipline. The second parameter
+	 * is a pointer to the receive buffer with the data.
+	 * The third parameter is the size, in bytes, of the
+	 * data received. See @ref uart_receive_callback_t
+	 * for more info. 
+	 */
+	int (*process_next_byte)(struct line_discipline *, void *, uint32_t);
 
 } line_discipline_t;
 
@@ -212,15 +226,36 @@ int line_discipline_copy_current_line_to_shell_buffer(line_discipline_t *discipl
 
 
 
+/**
+ * Initializes the line discipline.
+ *
+ * @param discipline The line discipline.
+ * @param process_next_byte The callback function for when
+ * 			a byte is received from terminal.
+ * @param process_shell The shell invocation function.
+ * @param prompt The prompt to print on each line.
+ * @param shell_buffer The buffer used by the shell associated
+ * 			with this line discipline.
+ * @return 0 if okay, negative value on error.
+ */
+int line_discipline_init(line_discipline_t *discipline,
+						int (*process_next_byte)(line_discipline_t *, void *, uint32_t),
+						int (*invoke_shell)(void),
+						char *prompt,
+						char *shell_buffer);
+
+
+
 
 
 /**
  * Processes the reception of the ANSI escape sequence
  * corresponding to the UP arrow.
  *
+ * @param discipline The line discipline.
  * @return 0 if okay, negative value on error.
  */
-int handle_scroll_up(void);
+int handle_scroll_up(line_discipline_t *discipline);
 
 
 
@@ -228,9 +263,10 @@ int handle_scroll_up(void);
  * Processes the reception of the ANSI escape sequence
  * corresponding to the DOWN arrow.
  *
+ * @param discipline The line discipline.
  * @return 0 if okay, negative value on error.
  */
-int handle_scroll_down(void);
+int handle_scroll_down(line_discipline_t *discipline);
 
 
 
@@ -238,9 +274,10 @@ int handle_scroll_down(void);
  * Processes the reception of the ANSI escape sequence
  * corresponding to the LEFT arrow.
  *
+ * @param discipline The line discipline.
  * @return 0 if okay, negative value on error.
  */
-int handle_scroll_left(void);
+int handle_scroll_left(line_discipline_t *discipline);
 
 
 
@@ -248,9 +285,10 @@ int handle_scroll_left(void);
  * Processes the reception of the ANSI escape sequence
  * corresponding to the RIGHT arrow.
  *
+ * @param discipline The line discipline.
  * @return 0 if okay, negative value on error.
  */
-int handle_scroll_right(void);
+int handle_scroll_right(line_discipline_t *discipline);
 
 
 
@@ -258,9 +296,10 @@ int handle_scroll_right(void);
  * Processes reception of the delete key (ASCII
  * backspace character).
  *
+ * @param discipline The line discipline.
  * @return 0 if okay, negative value on error.
  */
-int handle_delete(void);
+int handle_delete(line_discipline_t *discipline);
 
 
 
@@ -268,9 +307,10 @@ int handle_delete(void);
  * Processes reception of the return key (ASCII
  * \n or \r).
  *
+ * @param discipline The line discipline.
  * @return 0 if okay, negative value on error.
  */
-int handle_return(void);
+int handle_return(line_discipline_t *discipline);
 
 
 
@@ -284,10 +324,11 @@ int handle_return(void);
  * is only called when the current state of the
  * line discipline is @ref LINE_DISCIPLINE_PROCESS_ANSI_ESCAPE.
  *
+ * @param discipline The line discipline.
  * @param data Data received from terminal emulator.
  * @return 0 if okay, negative value on error.
  */
-int process_ANSI_escape_sequence(char data);
+int process_ANSI_escape_sequence(line_discipline_t *discipline, char data);
 
 
 
@@ -295,10 +336,11 @@ int process_ANSI_escape_sequence(char data);
  * Processes the reception of an ASCII control
  * character (0-31 and 127).
  *
+ * @param discipline The line discipline.
  * @param data Data received from terminal emulator.
  * @return 0 if okay, negative value on error.
  */
-int process_ASCII_control_char(char data);
+int process_ASCII_control_char(line_discipline_t *discipline, char data);
 
 
 
@@ -307,10 +349,11 @@ int process_ASCII_control_char(char data);
  * character (such as a-z, A-Z, 0-9, etc.). These
  * are the ASCII value 32-126.
  *
+ * @param discipline The line discipline.
  * @param data Data received from terminal emulator.
  * @return 0 if okay, negative value on error.
  */
-int process_printable_ASCII_char(char data);
+int process_printable_ASCII_char(line_discipline_t *discipline, char data);
 
 
 
@@ -319,20 +362,13 @@ int process_printable_ASCII_char(char data);
  * Will call either @ref process_ASCII_control_char
  * or @ref process_printable_ASCII_char.
  *
+ * @param discipline The line discipline.
  * @param data Data received from terminal emulator.
  * @return 0 if okay, negative value on error.
  */
-int process_ASCII_char(char data);
+int process_ASCII_char(line_discipline_t *discipline, char data);
 
 
-
-/**
- * Callback function for serial receive. This is
- * registered with the serial driver (typically a
- * UART) as a receive callback. See @ref uart_receive_callback_t
- * for more info.
- */
-int process_next_byte(void *buffer, uint32_t size);
 
 
 
