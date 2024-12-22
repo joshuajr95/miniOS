@@ -1,0 +1,87 @@
+
+
+/ {
+    model = "microchip,pic32mx795f512l";
+    chassis-type = "embedded";
+    
+
+    chosen {
+        stdout-path = "/soc/uart2:115200";
+    };
+
+
+    cpus {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        cpu0: cpu@0 {
+            compatible = "mips,m4k";
+            clock-frequency = <80000000>;
+            device-type = "cpu";
+            reg = <0>;
+            status = "okay";
+        };
+    };
+
+
+    soc {
+        #address-cells = <1>;
+        #size-cells = <1>;
+        compatible = "simple-bus";
+        interrupt-parent = <&intcon>;
+
+
+        intcon: interrupt-controller@bf881000 {
+            compatible = "microchip,pic32mx795f512l-intcon";
+            interrupt-controller;
+            #interrupt-cells = <1>;
+            reg = <0xbf881000 0x1000>;
+            status = "okay";
+        };
+
+        bmxcon: bus-matrix-controller@bf882000 {
+            compatible = "microchip,pic32mx-bmxcon";
+            reg = <0xbf882000 0x1000>;
+            status = "okay";
+        };
+
+
+        uart1: uart1@bf806000 {
+            compatible = "microchip,pic32mx-uart";
+            reg = <0xbf806000 0x200>;
+            status = "disabled";
+        };
+
+        uart2: uart2@bf806800 {
+            compatible = "microchip,pic32mx-uart";
+            reg = <0xbf806800 0x200>;
+            status = "disabled";
+        };
+
+        uart3: uart3@bf806400 {
+            compatible = "microchip,pic32mx-uart";
+            reg = <0xbf806400 0x200>;
+            status = "disabled";
+        };
+
+        uart4: uart4@bf806200 {
+            compatible = "microchip,pic32mx-uart";
+            reg = < 0xbf806200 0x200>;
+            status = "disabled";
+        };
+
+        uart5: uart5@bf806a00 {
+            compatible = "microchip,pic32mx-uart";
+            reg = <0xbf806a00 0x200>;
+            status = "disabled";
+        };
+
+        uart6: uart6@bf806600 {
+            compatible = "microchip,pic32mx-uart";
+            reg = <0xbf806600 0x200>;
+            status = "disabled";
+        };
+    };
+};
+
+
