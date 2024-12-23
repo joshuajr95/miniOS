@@ -22,6 +22,7 @@ class TokenType(Enum):
     TOKEN_TYPE_COMMA = 16
     TOKEN_TYPE_END_OF_FILE = 17
     TOKEN_TYPE_FORWARD_SLASH = 18
+    TOKEN_TYPE_NEWLINE = 19
 
 
 class Token:
@@ -77,6 +78,7 @@ class TokenizerStateMachine:
         self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
         self.stringToTokenize = stringToTokenize
         self.currentStringIndex = 0
+        self.currentLine = 1
 
         self.stateNames = {
             TokenizerState.TOKENIZER_STATE_DEFAULT : "TOKENIZER_STATE_DEFAULT",
@@ -119,6 +121,10 @@ class TokenizerStateMachine:
 
         if nextChar is None:
             newToken: Token = Token(TokenType.TOKEN_TYPE_END_OF_FILE, None)
+            return newToken
+        elif nextChar == "\n":
+            newToken: Token = Token(TokenType.TOKEN_TYPE_NEWLINE, "\n")
+            self.currentLine += 1
             return newToken
         elif isWhiteSpace(nextChar):
             return None
@@ -176,7 +182,7 @@ class TokenizerStateMachine:
             newToken: Token = Token(TokenType.TOKEN_TYPE_COMMA, ",")
             return newToken
         else:
-            raise ValueError(f"Character: \"{nextChar}\" is not a valid character for devicetree file.")
+            raise ValueError(f"Character: \"{nextChar}\" at line {self.currentLine} is not a valid character for devicetree file.")
 
         
 
@@ -190,6 +196,13 @@ class TokenizerStateMachine:
             self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
             return newToken
         
+        elif nextChar == "\n":
+            newToken: Token = self.currentToken
+            self.currentToken = Token(TokenType.TOKEN_TYPE_NEWLINE, "\n")
+            self.currentLine += 1
+            self.hasExtraToken = True
+            return newToken
+
         elif isWhiteSpace(nextChar):
             self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
             return self.currentToken
@@ -220,7 +233,7 @@ class TokenizerStateMachine:
             return newToken
 
         elif nextChar == "\"":
-            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} should not appear in device tree name.")
+            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} at line {self.currentLine} should not appear in device tree name.")
 
         elif nextChar == "@":
             newToken: Token = self.currentToken
@@ -272,7 +285,7 @@ class TokenizerStateMachine:
             return newToken
 
         else:
-            raise ValueError(f"Character: \"{nextChar}\" is not a valid character for devicetree file.")
+            raise ValueError(f"Character: \"{nextChar}\" at line {self.currentLine} is not a valid character for devicetree file.")
 
 
 
@@ -287,6 +300,13 @@ class TokenizerStateMachine:
             self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
             return newToken
         
+        elif nextChar == "\n":
+            newToken: Token = self.currentToken
+            self.currentToken = Token(TokenType.TOKEN_TYPE_NEWLINE, "\n")
+            self.currentLine += 1
+            self.hasExtraToken = True
+            return newToken
+        
         elif isWhiteSpace(nextChar):
             self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
             return self.currentToken
@@ -296,7 +316,7 @@ class TokenizerStateMachine:
             return None
 
         elif isValidNameCharacter(nextChar):
-            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} should not appear in device tree number.")
+            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} at line {self.currentLine} should not appear in device tree number.")
 
         elif nextChar == "{":
             newToken: Token = self.currentToken
@@ -320,7 +340,7 @@ class TokenizerStateMachine:
             return newToken
 
         elif nextChar == "\"":
-            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} should not appear in device tree name.")
+            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} at line {self.currentLine} should not appear in device tree name.")
 
         elif nextChar == "@":
             newToken: Token = self.currentToken
@@ -372,7 +392,7 @@ class TokenizerStateMachine:
             return newToken
 
         else:
-            raise ValueError(f"Character: \"{nextChar}\" is not a valid character for devicetree file.")
+            raise ValueError(f"Character: \"{nextChar}\" at line {self.currentLine} is not a valid character for devicetree file.")
 
     
     def handleStateUnsureWhetherDecimalOrHexadecimal(self) -> Token:
@@ -384,6 +404,14 @@ class TokenizerStateMachine:
             self.currentToken = Token(TokenType.TOKEN_TYPE_END_OF_FILE, None)
             self.hasExtraToken = True
             self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
+            return newToken
+        
+        elif nextChar == "\n":
+            self.currentToken.type = TokenType.TOKEN_TYPE_DECIMAL_NUMBER
+            newToken: Token = self.currentToken
+            self.currentToken = Token(TokenType.TOKEN_TYPE_NEWLINE, "\n")
+            self.currentLine += 1
+            self.hasExtraToken = True
             return newToken
 
         elif isWhiteSpace(nextChar):
@@ -403,7 +431,7 @@ class TokenizerStateMachine:
             return None
 
         elif isValidNameCharacter(nextChar):
-            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} should not appear in device tree number.")
+            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} at line {self.currentLine} should not appear in device tree number.")
         
         elif nextChar == "{":
             self.currentToken.type = TokenType.TOKEN_TYPE_DECIMAL_NUMBER
@@ -430,7 +458,7 @@ class TokenizerStateMachine:
             return newToken
 
         elif nextChar == "\"":
-            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} should not appear in device tree name.")
+            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} at line {self.currentLine} should not appear in device tree name.")
 
         elif nextChar == "@":
             self.currentToken.type = TokenType.TOKEN_TYPE_DECIMAL_NUMBER
@@ -489,7 +517,7 @@ class TokenizerStateMachine:
             return newToken
 
         else:
-            raise ValueError(f"Character: \"{nextChar}\" is not a valid character for devicetree file.")
+            raise ValueError(f"Character: \"{nextChar}\" at line {self.currentLine} is not a valid character for devicetree file.")
 
 
 
@@ -503,6 +531,13 @@ class TokenizerStateMachine:
             self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
             return newToken
         
+        elif nextChar == "\n":
+            newToken: Token = self.currentToken
+            self.currentToken = Token(TokenType.TOKEN_TYPE_NEWLINE, "\n")
+            self.currentLine += 1
+            self.hasExtraToken = True
+            return newToken
+        
         elif isWhiteSpace(nextChar):
             self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
             return self.currentToken
@@ -512,7 +547,7 @@ class TokenizerStateMachine:
             return None
 
         elif isValidNameCharacter(nextChar):
-            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} should not appear in device tree number.")
+            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} at line {self.currentLine} should not appear in device tree number.")
 
         elif nextChar == "{":
             newToken: Token = self.currentToken
@@ -536,7 +571,7 @@ class TokenizerStateMachine:
             return newToken
 
         elif nextChar == "\"":
-            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} should not appear in device tree name.")
+            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} at line {self.currentLine} should not appear in device tree name.")
 
         elif nextChar == "@":
             newToken: Token = self.currentToken
@@ -588,7 +623,7 @@ class TokenizerStateMachine:
             return newToken
 
         else:
-            raise ValueError(f"Character: \"{nextChar}\" is not a valid character for devicetree file.")
+            raise ValueError(f"Character: \"{nextChar}\" at line {self.currentLine} is not a valid character for devicetree file.")
 
 
 
@@ -597,7 +632,11 @@ class TokenizerStateMachine:
         nextChar: str = self.getNextChar()
 
         if nextChar is None:
-            raise ValueError(f"Error occurred during tokenization. No matching \" for string: {self.currentToken.value}.")
+            raise ValueError(f"Error occurred during tokenization at line {self.currentLine}. No matching \" for string: {self.currentToken.value}.")
+        
+        elif nextChar == "\n":
+            raise ValueError(f"Error occurred during tokenization at line {self.currentLine}. Cannot have newline in middle of string.")
+
         
         elif nextChar == "\"":
             self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
@@ -619,6 +658,13 @@ class TokenizerStateMachine:
             self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
             return newToken
         
+        elif nextChar == "\n":
+            newToken: Token = self.currentToken
+            self.currentToken = Token(TokenType.TOKEN_TYPE_NEWLINE, "\n")
+            self.currentLine += 1
+            self.hasExtraToken = True
+            return newToken
+        
         elif isWhiteSpace(nextChar):
             self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
             return self.currentToken
@@ -649,7 +695,7 @@ class TokenizerStateMachine:
             return newToken
 
         elif nextChar == "\"":
-            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} should not appear in device tree name.")
+            raise ValueError(f"Error occurred during tokenization. Unexpected character: {nextChar} at line {self.currentLine} should not appear in device tree name.")
 
         elif nextChar == "@":
             newToken: Token = self.currentToken
@@ -705,7 +751,7 @@ class TokenizerStateMachine:
             return None
 
         else:
-            raise ValueError(f"Character: \"{nextChar}\" is not a valid character for devicetree file.")
+            raise ValueError(f"Character: \"{nextChar}\" at line {self.currentLine} is not a valid character for devicetree file.")
 
 
     stateCallbacks = {
