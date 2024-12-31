@@ -4,7 +4,8 @@
 import argparse
 from typing import List
 
-from tokenizer import TokenizerStateMachine, Token, TokenType
+from tokenizer import Tokenizer, Token, TokenType
+from parser import RecursiveDescentParser, ParseError
 
 
 
@@ -37,10 +38,17 @@ def runCompilerCore(inputFile, outputFile=None):
     #####################
 
     tokenList: List[Token] = []
-    tokenizer: TokenizerStateMachine = TokenizerStateMachine(fileString)
+    tokenizer: Tokenizer = Tokenizer(fileString)
+    parser: RecursiveDescentParser = RecursiveDescentParser(tokenizer, inputFile, lookAhead=1)
 
 
+    parser.parseDeviceTree()
 
+    parseTree = parser.getParseTree()
+    parseTree.output()
+
+
+    '''
     nextToken: Token = tokenizer.getNextToken()
 
     while nextToken.type != TokenType.TOKEN_TYPE_END_OF_FILE:
@@ -48,10 +56,8 @@ def runCompilerCore(inputFile, outputFile=None):
         nextToken: Token = tokenizer.getNextToken()
 
     tokenList.append(nextToken)
+    '''
 
-
-    for token in tokenList:
-        print(token.value)
 
 
 

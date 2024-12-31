@@ -1,0 +1,59 @@
+
+Device Tree Grammar Specification:
+-------------------------------------------------
+
+NOTE: None here is used to symbolize an empty string (usually denoted by the epsilon symbol).
+
+NOTE: Non-terminals enclosed by angle brackets, i.e. <non-terminal>, denote non-terminals
+        with respect to the parser grammar. Non-terminals enclosed by square brackets, i.e.
+        [non-terminal], denote terminals in the parser grammar, but non-terminals with respect
+        to the tokenizer grammar.
+
+NOTE: Parser grammar is specified in proper Backus-Naur form. However, to save space (and time
+        typing this) the tokenizer grammar is written with regular expression syntax (since it is
+        a regular grammar anyway) or with a literal string in quotation marks.
+
+
+
+
+Parser Grammar:
+----------------
+
+
+<device-tree-file>      ::=     <file-body>   [EOF]
+<file-body>             ::=     <root-node-definition>   <file-body>   |   <phandle-override>   <file-body>   |   None
+<root-node-definition>  ::=     [forward-slash]   [left-curly-brace]   <node-body>   [right-curly-brace]   [semicolon]
+<phandle-override>      ::=     [phandle-reference]   [left-curly-brace]   <node-body>   [right-curly-brace]
+
+<node-body>             ::=     <node-body-element>   <node-body>   |   None
+<node-body-element>     ::=     <node-definition>   |   <property>   |   None
+<property>              ::=     [name]   <property-assignment>   [semicolon]   | [hashtag]   [name]   <property-assignment>   [semicolon]
+<property-assignment>   ::=     [equals-sign]   <property-value>   |   None
+<property-value>        ::=     <property-value-list>   |   None
+<property-value-list>   ::=     [string]    <property-value-list>   |   [phandle-reference]    <property-value-list>   |   <value-array>   <property-value-list> | None
+<value-array>           ::=     [left-angle-bracket]   <values>   [right-angle-bracket]
+<values>                ::=     [number]   <values>   |   [phandle-reference]   <values>   |   None
+<node-definition>       ::=     <node-declaration>   [left-curly-brace]   <node-body>   [right-curly-brace]   [semicolon]
+<node-declaration>      ::=     [name]   <label-and-address>
+<label-and-address>     ::=     [colon]   [name]   <address>   |   <address>
+<address>               ::=     [at-symbol]   [number]   |   None
+
+
+
+
+
+Tokenizer Grammar:
+-------------------
+
+
+[name]                  ::=     [A-Za-z] ( [A-Za-z0-9,\._\+\?\#\-] )+
+[number]                ::=     (0x)? ([0-9a-fA-F])+
+[colon]                 ::=     ":"
+[at-symbol]             ::=     "@"
+[forward-slash]         ::=     "/"
+[EOF]                   ::=     (token of type TOKEN_TYPE_END_OF_FILE)
+[phandle-reference]     ::=     ("&" [name])
+[left-angle-bracket]    ::=     "<"
+[right-angle-bracket]   ::=     ">"
+[string]                ::=     "\"" [^\n]* "\""
+

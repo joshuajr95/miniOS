@@ -39,6 +39,7 @@
             status = "okay";
         };
 
+
         bmxcon: bus-matrix-controller@bf882000 {
             compatible = "microchip,pic32mx-bmxcon";
             reg = <0xbf882000 0x1000>;
