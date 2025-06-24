@@ -1,0 +1,70 @@
+
+
+
+General Issues:
+----------------
+
+- No more raising Python exceptions, since this leads to both python exceptions
+    and device tree compiler errors. Print warning or error message and exit.
+
+
+Tokenizer Issues:
+------------------
+
+- Handle EOF gracefully
+- Maybe refactor to make hasExtraToken into a separate state
+- Add newline token and ability to print out the line number.
+- Change token type phandle reference to be token type ampersand
+    followed by token type name?            Maybe later
+
+
+Recursive Descent Parser Issues:
+---------------------------------
+
+- Decide between return codes and ParseErrors   ParseErrors
+- Should I get rid of newline tokens??          YES
+- Make constructor for ParseTreeNode not take
+    parent and instead add parent as part of
+    addChild() method?                          Maybe later.
+
+- Node implementations that end with a TERMINAL need extra getNextToken() call,
+    however node implementations that end with a NONTERMINAL do not.
+- Every node implementation that begins with a TERMINAL must check that that
+    TERMINAL is correct. This may lead to extra checks if the node that called
+    the current one already checked, but is necessary for implementation correctness.
+- Every parse function should assume that the self.currentToken variable is pointing
+    to the first TERMINAL needed by that NONTERMINAL, and should ensure that after
+    returning the self.currentToken variable is pointing to the TERMINAL 1 after the
+    last TERMINAL needed by that function.
+- Every parse function should assume that when the function starts, the
+    self.currentParseTreeNode variable refers to the parent of the parse tree node
+    corresponding to the production represented by the parse function (i.e. if production
+    A is represented by parse function parseA(), then when parseA() starts, it should
+    assume that self.currentParseTreeNode points to what will be A.parent). Every
+    parse function should ensure that after it exists, the self.currentParseTreeNode
+    variable points to the parent of the parse tree node it created (i.e. the same one
+    it pointed to when the function started). Thus, a given parse function creates its
+    entire subtree of the parse tree.
+
+
+Semantic Checking Issues:
+--------------------------
+
+- Check that if @unit-address is present in node name, then reg is present and
+    conversely if reg is not present, then @unit-address is not present either.
+- Check that #address-cells and #size-cells matches the reg property
+- Check that if #address-cells and #size-cells not present, then default is inserted
+- Check that phandle references are referencing existing node.
+- Check that names are in correct format (property names have different rules than node names)
+- Check that addresses are in valid format for given bus type on which the node sits
+- Warn about duplicate nodes in same node definition.
+- Check that alias names in correct format.
+
+
+Device Tree Generator Issues:
+------------------------------
+
+- When the generation function for a given node starts, the currentDeviceTreeNode variable
+    should point to the parent node of the current device tree node, and that function should
+    create its own node (and subtree) and set the currentDeviceTreeNode variable back to the
+    parent when it exits. This only happens in the handleNodeDefinition function.

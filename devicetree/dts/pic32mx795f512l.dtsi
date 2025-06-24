@@ -3,7 +3,7 @@
 / {
     model = "microchip,pic32mx795f512l";
     chassis-type = "embedded";
-    
+
 
     chosen {
         stdout-path = "/soc/uart2:115200";

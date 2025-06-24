@@ -1,6 +1,6 @@
 
 
-from tokenizer import Tokenizer, Token, TokenType
+from tokenizer import Tokenizer, Token, TokenType, isValidHexadecimalCharacter
 from enum import Enum
 from typing import List
 
@@ -78,7 +78,7 @@ class ParseTreeNode:
 
     def getNodeName(self):
         if self.type == NodeType.PARSE_TREE_NODE_TYPE_TERMINAL:
-            out = Token.tokenNames[self.terminal.type] + ": "
+            out = self.terminal.type.name + ": "
             if self.terminal.value is None:
                 out += "NONE"
             else:
@@ -378,6 +378,18 @@ class RecursiveDescentParser:
         if self.currentToken.type == TokenType.TOKEN_TYPE_DECIMAL_NUMBER:       # maybe also HEX number??
             newNode: ParseTreeNode = ParseTreeNode(NodeType.PARSE_TREE_NODE_TYPE_TERMINAL, self.currentParseTreeNode, self.currentToken)
             self.currentParseTreeNode.addChild(newNode)
+
+        # this elif is necessary because the device tree syntax allows hexadecimal numbers to be specified without
+        # the 0x prefix after the node name which leads to a potential scenario where a valid hex address like
+        # 0xdeadbeef or 0xcafebabe are tokenized as name tokens when the preceding 0x is removed. 
+        elif self.currentToken.type == TokenType.TOKEN_TYPE_NAME:
+            isValidHexAddress = all([isValidHexadecimalCharacter(ch) for ch in self.currentToken.value])
+            if isValidHexAddress:
+                newToken: Token = Token(TokenType.TOKEN_TYPE_DECIMAL_NUMBER, self.currentToken.value)
+                newNode: ParseTreeNode = ParseTreeNode(NodeType.PARSE_TREE_NODE_TYPE_TERMINAL, self.currentParseTreeNode, newToken)
+                self.currentParseTreeNode.addChild(newNode)
+            else:
+                raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected number. Token: {str(self.currentToken)}.\n{self.getCurrentLine()}")
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected number. Token: {str(self.currentToken)}.\n{self.getCurrentLine()}")
 
@@ -637,4 +649,221 @@ class RecursiveDescentParser:
 
     def getParseTree(self):
         return self.parseTree
+
+
+
+
+'''
+Finds the first sub-node of the given type
+'''
+def findFirstSubNodeByType(root: ParseTreeNode, type: NodeType):
+
+    found = None
+
+    if root.type == type:
+        found = root
+    else:
+        for node in root.children:
+            found = findFirstSubNodeByType(node, type)
+            if found is not None:
+                break
+
+    return found
+
+
+'''
+Returns a list of all sub-nodes of the given type.
+'''
+def findSubNodeListByType(root: ParseTreeNode, type: NodeType):
+    foundList = []
+
+    if root.type == type:
+        foundList.append(root)
+    else:
+        for node in root.children:
+            sublist = findSubNodeListByType(node, type)
+            if sublist is not None:
+                foundList.append(sublist)
+
+    return foundList
+
+
+'''
+Returns a list of all sub-nodes of type and filters by the given
+function.
+'''
+def findSubNodeListByTypeAndFilter(root: ParseTreeNode, type: NodeType, filterFunc):
+    foundList = []
+
+    if root.type == type and filterFunc(root):
+        foundList.append(root)
+    else:
+        for node in root.children:
+            sublist = findSubNodeListByTypeAndFilter(node, type, filterFunc)
+            if sublist is not None:
+                foundList.append(sublist)
+
+    return foundList
+
+
+
+'''
+Finds the node body for a parse tree node of type
+PARSE_TREE_NODE_TYPE_NODE_DEFINITION or PARSE_TREE_NODE_TYPE_ROOT_NODE_DEFINITION
+'''
+def findNodeBody(node: ParseTreeNode):
+    bodyNode = None
+
+    for child in node.children:
+        if child.type == NodeType.PARSE_TREE_NODE_TYPE_NODE_BODY:
+            bodyNode = child
+            break
+    
+    return bodyNode
+
+
+def findLabelNode(node: ParseTreeNode):
+    labelNode = None
+    declarationNode = findFirstSubNodeByType(node, NodeType.PARSE_TREE_NODE_TYPE_NODE_DECLARATION)
+
+    for childNode in declarationNode.children:
+        if childNode.type == NodeType.PARSE_TREE_NODE_TYPE_NODE_LABEL:
+            labelNode = childNode
+            break
+    
+    return labelNode
+
+
+
+def findNameNode(node: ParseTreeNode):
+    nameNode = None
+    declarationNode = findFirstSubNodeByType(node, NodeType.PARSE_TREE_NODE_TYPE_NODE_DECLARATION)
+
+    for childNode in declarationNode.children:
+        if childNode.type == NodeType.PARSE_TREE_NODE_TYPE_TERMINAL and childNode.terminal.type == TokenType.TOKEN_TYPE_NAME:
+            nameNode = childNode
+            break
+    
+    return nameNode
+
+
+
+def findUnitAddressNode(node: ParseTreeNode):
+    unitAddressNode = None
+    declarationNode = findFirstSubNodeByType(node, NodeType.PARSE_TREE_NODE_TYPE_NODE_DECLARATION)
+
+    for child in declarationNode.children:
+        if child.type == NodeType.PARSE_TREE_NODE_TYPE_NODE_ADDRESS:
+            unitAddressNode = child
+            break
+    
+    return unitAddressNode
+
+
+
+def getLabel(node: ParseTreeNode):
+    label: str = None
+    labelNode = findLabelNode(node)
+
+    if labelNode is not None:
+        label = labelNode.children[0].value
+
+    return label
+
+
+
+def getName(node: ParseTreeNode):
+    name: str = None
+    nameNode = findNameNode(node)
+    addressNode = findUnitAddressNode(node)
+
+    if nameNode is not None:
+        name = nameNode.terminal.value
+
+    return name
+
+
+def getNameWithUnitAddress(node: ParseTreeNode):
+    name: str = None
+    nameNode = findNameNode(node)
+    addressNode = findUnitAddressNode(node)
+
+    if nameNode is not None:
+        name = nameNode.terminal.value
+
+        if addressNode is not None:
+            name += addressNode.children[0].terminal.value
+            name += addressNode.children[1].terminal.value
+
+    return name
+
+
+
+def getUnitAddress(node: ParseTreeNode):
+    unitAddress: str = None
+    unitAddressNode = findNodeUnitAddress(node)
+
+    if unitAddressNode is not None:
+        unitAddress = unitAddressNode.children[1].terminal.value
+    
+    return unitAddress
+
+
+
+def findPropertyNameNode(node: ParseTreeNode):
+    nameNode: ParseTreeNode = None
+
+    for child in node.children:
+        if child.type == NodeType.PARSE_TREE_NODE_TYPE_TERMINAL and child.terminal.type == TokenType.TOKEN_TYPE_NAME:
+            nameNode = child
+            break
+    
+    return nameNode
+
+
+def findPropertyValueNode(node: ParseTreeNode):
+    valueNode: ParseTreeNode = None
+
+    for child in node.children:
+        if child.type == NodeType.PARSE_TREE_NODE_TYPE_NODE_PROPERTY_VALUE:
+            valueNode = child
+            break
+    
+    return valueNode
+
+
+def getPropertyName(node: ParseTreeNode):
+    nameNode: ParseTreeNode = findPropertyNameNode(node)
+    propertyName: str = None
+
+    if nameNode is not None:
+        propertyName = nameNode.terminal.value
+    
+    return propertyName
+
+
+
+
+def isRegProperty(node: ParseTreeNode):
+    if node.type != NodeType.PARSE_TREE_NODE_TYPE_NODE_PROPERTY:
+        return False
+
+    firstChild = node.children[0]
+
+    return firstChild.type == NodeType.PARSE_TREE_NODE_TYPE_TERMINAL and firstChild.terminal.type == TokenType.TOKEN_TYPE_NAME and firstChild.terminal.value == "reg"
+
+def findRegProperty(root: ParseTreeNode):
+    return findSubNodeListByTypeAndFilter(root, NodeType.PARSE_TREE_NODE_TYPE_NODE_PROPERTY, isRegProperty)
+
+
+def findAddressCells(node: ParseTreeNode):
+    pass
+
+
+def findSizeCells(node: ParseTreeNode):
+    pass
+
+
+
+
 
