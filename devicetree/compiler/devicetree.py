@@ -3,7 +3,6 @@
 from parser import *
 import os
 import yaml
-from semantics import *
 
 
 # acceptable defaults according to DTSpec
