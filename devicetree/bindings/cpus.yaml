@@ -1,0 +1,23 @@
+# DT binding for the /cpus node, not each individual
+# CPU but the grouping of all CPUs
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: March 15, 2026
+
+title: Binding for /cpus node
+
+compatible: "cpus"
+
+properties:
+  "#address-cells":
+    type: int
+    required: true
+    description: The number of 32-bit cells used to describe the base address for a given CPU
+    const: 1
+
+  "#size-cells":
+    type: int
+    required: true
+    description: The number of 32-bit cells used to describe the size of the address range for a given CPU
+    const: 0
+

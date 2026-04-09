@@ -1,0 +1,25 @@
+# DT binding for the PIC32MX series Bus Matrix controller
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: April 8, 2026
+
+title: Binding for the PIC32MX Bus Matrix Controller node
+
+compatible: "microchip,pic32mx-bmxcon"
+
+
+properties:
+
+  reg:
+    type: array
+    required: true
+    description: Base address and memory size for the Bus Matrix Controller register block
+
+  status:
+    type: string
+    required: true
+    description: Status of the Bus Matrix Controller
+    enum:
+      - "okay"
+      - "disabled"
+      - "fail"

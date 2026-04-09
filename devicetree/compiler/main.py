@@ -6,6 +6,7 @@ from typing import List
 
 from tokenizer import Tokenizer, Token, TokenType
 from parser import RecursiveDescentParser, ParseError
+from devicetree import *
 
 
 
@@ -39,23 +40,30 @@ def runCompilerCore(inputFile, outputFile=None):
 
     tokenList: List[Token] = []
     tokenizer: Tokenizer = Tokenizer(fileString)
-    parser: RecursiveDescentParser = RecursiveDescentParser(tokenizer, inputFile, lookAhead=1)
 
+    
+    parser: RecursiveDescentParser = RecursiveDescentParser(tokenizer, inputFile, lookAhead=1)
 
     parser.parseDeviceTree()
 
     parseTree = parser.getParseTree()
-    parseTree.output()
-
+    DTBuilder = DeviceTreeBuilder(parseTree)
+    DTBuilder.buildDeviceTree()
+    deviceTree = DTBuilder.deviceTree.print()
+    #parseTree.output()
+    
 
     '''
     nextToken: Token = tokenizer.getNextToken()
 
-    while nextToken.type != TokenType.TOKEN_TYPE_END_OF_FILE:
+    while nextToken.type != TokenType.END_OF_FILE:
         tokenList.append(nextToken)
         nextToken: Token = tokenizer.getNextToken()
 
     tokenList.append(nextToken)
+    
+    for token in tokenList:
+        print(token)
     '''
 
 

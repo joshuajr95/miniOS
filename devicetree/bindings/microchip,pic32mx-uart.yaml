@@ -1,0 +1,37 @@
+# DT binding for the PIC32MX series UART controllers
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: April 8, 2026
+
+title: Binding for the PIC32MX UART controllers
+
+compatible: "microchip,pic32mx-uart"
+
+
+properties:
+
+  reg:
+    type: array
+    required: true
+    description: Base address and memory size for UART controller register block
+
+  status:
+    type: string
+    required: true
+    description: Status of UART controller
+    enum:
+      - "okay"
+      - "disabled"
+      - "fail"
+
+  interrupt-parent:
+    type: phandle
+    required: true
+    description: The parent in the interrupt tree for this node
+
+  interrupts:
+    type: array
+    required: true
+    description: The array of IRQ numbers and flags used by this node.
+
+

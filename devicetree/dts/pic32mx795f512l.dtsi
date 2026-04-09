@@ -2,7 +2,11 @@
 
 / {
     model = "microchip,pic32mx795f512l";
+    compatible = "microchip,pic32mx795f512l";
     chassis-type = "embedded";
+
+    #address-cells = <2>;
+    #size-cells = <2>;
 
 
     chosen {
@@ -15,12 +19,44 @@
         #size-cells = <0>;
 
         cpu0: cpu@0 {
-            compatible = "mips,m4k";
+            device_type = "cpu";
             clock-frequency = <80000000>;
-            device-type = "cpu";
+            timebase-frequency = <40000000>;
             reg = <0>;
             status = "okay";
         };
+    };
+
+
+    mem0: memory@80000000 {
+        device_type = "memory";
+        reg = <0x0 0x80000000 0x0 0x20000>;
+    };
+
+
+    mem1: memory@a0000000 {
+        device_type = "memory";
+        reg = <0x0 0xa0000000 0x0 0x20000>;
+    };
+
+
+    program_flash0: flash@9d000000 {
+        reg = <0x0 0x9d000000 0x0 0x80000>;
+    };
+
+
+    program_flash1: flash@bd000000 {
+        reg = <0x0 0xbd000000 0x0 0x80000>;
+    };
+
+
+    boot_flash0: flash@9fc00000 {
+        reg = <0x0 0x9fc00000 0x0 0x2ff0>;
+    };
+
+
+    boot_flash1: flash@bfc00000 {
+        reg = <0x0 0xbfc00000 0x0 0x2ff0>;
     };
 
 
@@ -32,9 +68,9 @@
 
 
         intcon: interrupt-controller@bf881000 {
-            compatible = "microchip,pic32mx795f512l-intcon";
+            compatible = "microchip,pic32mx-intcon";
             interrupt-controller;
-            #interrupt-cells = <1>;
+            #interrupt-cells = <2>;
             reg = <0xbf881000 0x1000>;
             status = "okay";
         };
@@ -46,43 +82,67 @@
             status = "okay";
         };
 
+        flash_ctrl: flash-controller@bf80f400 {
+            compatible = "microchip,pic32mx-nvm";
+            reg = <0xbf80f400 0x200>;
+            status = "disabled";
+        };
 
-        uart1: uart1@bf806000 {
+
+        uart1: uart@bf806000 {
             compatible = "microchip,pic32mx-uart";
             reg = <0xbf806000 0x200>;
             status = "disabled";
+            interrupt-parent = <&intcon>;
+            interrupts = <26 0 27 0 28 0>;
         };
 
-        uart2: uart2@bf806800 {
+        uart2: uart@bf806800 {
             compatible = "microchip,pic32mx-uart";
             reg = <0xbf806800 0x200>;
             status = "disabled";
+            interrupt-parent = <&intcon>;
+            interrupts = <37 0 38 0 39 0>;
         };
 
-        uart3: uart3@bf806400 {
+        uart3: uart@bf806400 {
             compatible = "microchip,pic32mx-uart";
             reg = <0xbf806400 0x200>;
             status = "disabled";
+            interrupt-parent = <&intcon>;
+            interrupts = <40 0 41 0 42 0>;
         };
 
-        uart4: uart4@bf806200 {
+        uart4: uart@bf806200 {
             compatible = "microchip,pic32mx-uart";
             reg = < 0xbf806200 0x200>;
             status = "disabled";
+            interrupt-parent = <&intcon>;
+            interrupts = <67 0 68 0 69 0>;
         };
 
-        uart5: uart5@bf806a00 {
+        uart5: uart@bf806a00 {
             compatible = "microchip,pic32mx-uart";
             reg = <0xbf806a00 0x200>;
             status = "disabled";
+            interrupt-parent = <&intcon>;
+            interrupts = <73 0 74 0 75 0>;
         };
 
-        uart6: uart6@bf806600 {
+        uart6: uart@bf806600 {
             compatible = "microchip,pic32mx-uart";
             reg = <0xbf806600 0x200>;
             status = "disabled";
+            interrupt-parent = <&intcon>;
+            interrupts = <70 0 71 0 72 0>;
         };
     };
 };
+
+
+&uart2 {
+    status = "okay";
+};
+
 
 

@@ -312,8 +312,9 @@ class Tokenizer:
 
 
 
-    def __init__(self):
+    def __init__(self, stringToTokenize):
         self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
+        self.stringToTokenize = stringToTokenize
         self.currentStringIndex = 0
         self.currentLineNumber = 1
         self.currentColumnNumber = 1
@@ -1202,15 +1203,6 @@ class Tokenizer:
         TokenizerState.TOKENIZER_STATE_PROCESSING_STRING : handleStateProcessingString,
     }
 
-
-    def initializeTokenization(self, stringToTokenize):
-        self.state = TokenizerState.TOKENIZER_STATE_DEFAULT
-        self.stringToTokenize = stringToTokenize
-        self.currentStringIndex = 0
-        self.currentLineNumber = 1
-        self.currentColumnNumber = 1
-        self.currentToken = None
-        self.hasExtraToken = False
 
     '''
     Resets the tokenization process to the beginning.

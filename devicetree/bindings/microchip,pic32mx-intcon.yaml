@@ -1,0 +1,37 @@
+# DT binding for the PIC32MX series interrupt controller
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: April 8, 2026
+
+
+title: Binding for PIC32MX interrupt controller
+
+compatible: "microchip,pic32mx-intcon"
+
+
+properties:
+
+  reg:
+    type: array
+    required: true
+    description: Base address and memory size for interrupt controller register block
+
+  interrupt-controller:
+    type: boolean
+    required: true
+    description: Marks this node as an interrupt controller
+
+  "#interrupt-cells":
+    type: int
+    required: true
+    description: The number of 32-bit cells used to describe the 'interrupts' property of nodes that have this node as their 'interrupt-parent' property. Uses 2 cells, one for interrupt number and another for flags
+    const: 2
+
+  status:
+    type: string
+    required: true
+    description: The status of this device
+    enum:
+      - "okay"
+      - "disabled"
+      - "fail"

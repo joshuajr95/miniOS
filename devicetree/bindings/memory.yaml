@@ -1,0 +1,32 @@
+# Device Tree binding file for main memory nodes
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: March 15, 2026
+
+
+title: Binding for main memory nodes
+
+compatible: "memory"
+
+properties:
+
+  device_type:
+    type: string
+    required: true
+    description: Describes the type of the device. Always set to 'memory'
+    const: "memory"
+
+  reg:
+    type: array
+    required: true
+    description: Address range for the main memory node.
+
+  initial-mapped-area:
+    type: array
+    required: false
+    description: Address range for the initial mapped area
+
+  hotpluggable:
+    type: boolean
+    required: false
+    description: Whether the memory can be added or removed during operation

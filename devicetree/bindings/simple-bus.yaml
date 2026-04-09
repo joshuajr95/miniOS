@@ -1,0 +1,27 @@
+# DT binding for the /soc node and any other
+# node that has the 'simple-bus' compatible
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: April 7, 2026
+
+
+title: Binding for simple-bus
+
+compatible: "simple-bus"
+
+properties:
+
+  "#address-cells":
+    type: int
+    required: true
+    description: Number of 32-bit cells used to specify the base address for child nodes' 'reg' property
+
+  "#size-cells":
+    type: int
+    required: true
+    description: Number of 32-bit cells used to specify the size of memory for child nodes' 'reg' property
+
+  interrupt-parent:
+    type: phandle
+    required: true
+    description: Phandle to the node that serves as the interrupt controller for this node

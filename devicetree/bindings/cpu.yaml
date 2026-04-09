@@ -1,0 +1,90 @@
+# DT binding for /cpus/cpu* nodes
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: March 15, 2026
+
+title: Binding for /cpus/cpu* node
+
+compatible: "cpu"
+
+properties:
+
+  device_type:
+    type: string
+    required: true
+    description: Type of the device. Always set to 'cpu'
+    const: "cpu"
+
+  reg:
+    type: int
+    required: true
+    description: Address of the CPU. Basically just the CPU number
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Frequency of the clock signal for the CPU
+
+  timebase-frequency:
+    type: int
+    required: true
+    description: Frequency of the timebase signal
+
+
+  status:
+    type: string
+    required: true
+    description: Status of the CPU
+    enum:
+      - "okay"
+      - "disabled"
+      - "fail"
+
+  enable-method:
+    type: string-array
+    required: false
+    description: Method to enable a second CPU
+    enum:
+      - "spin-table"
+      - "psci"
+
+  cpu-release-addr:
+    type: int
+    required: false
+    description: Address at which to start second CPU running
+
+  tlb-split:
+    type: boolean
+    required: false
+    description: If present, denotes that there are separate TLBs for instructions and data
+
+  tlb-size:
+    type: int
+    required: false
+    description: The number of TLB entries. Required for unified TLBs (tlb-split not present)
+
+  tlb-sets:
+    type: int
+    required: false
+    description: The number of associativity sets for TLB. Required for unified TLBs.
+
+  d-tlb-size:
+    type: int
+    required: false
+    description: The number of data TLB entries. Required for split TLBs (tlb-split present)
+
+  d-tlb-sets:
+    type: int
+    required: false
+    description: The number of associativity sets for data TLB. Required for split TLBs.
+
+  i-tlb-size:
+    type: int
+    required: false
+    description: The number of instruction TLB entries. Required for split TLBs.
+
+  i-tlb-sets:
+    type: int
+    required: false
+    description: The number of associativity sets for instruction TLB. Required for split TLBs.
+

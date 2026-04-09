@@ -1,0 +1,48 @@
+# This file contains the Device Tree binding for the
+# root node for the PIC32MX795F512L microcontroller
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: March 15, 2026
+
+title: Binding for PIC32MX795F512L microcontroller
+
+
+compatible: "microchip,pic32mx795f512l"
+
+properties:
+
+  model:
+    type: string
+    required: true
+    description: The model name for the device.
+
+  "#address-cells":
+    type: int
+    required: true
+    description: The number of 32-bit cells used for the base address.
+    const: 2
+
+  "#size-cells":
+    type: int
+    required: true
+    description: The number of 32-bit cells used for the size of the memory range.
+    const: 2
+
+  serial-number:
+    type: string
+    required: false
+    description: The serial number for the SoC
+  
+  chassis-type:
+    type: string
+    required: false
+    description: The type of form factor for the SoC
+    enum:
+      - "desktop"
+      - "laptop"
+      - "convertible"
+      - "server"
+      - "tablet"
+      - "handset"
+      - "watch"
+      - "embedded"

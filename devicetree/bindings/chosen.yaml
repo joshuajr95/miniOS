@@ -1,0 +1,38 @@
+# DT binding for the /chosen node
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: March 15, 2026
+
+title: Device Tree binding for the /chosen node
+
+compatible: "chosen"
+
+properties:
+
+  bootargs:
+    type: string
+    required: false
+    description: The boot arguments to pass to the operating system on startup
+
+  stdout-path:
+    type: string
+    required: false
+    description: >
+      A string that specifies the full path to the node
+      representing the device to be used for
+      console output. If the character “:” is present
+      in the value it terminates the path. The value
+      may be an alias. If the stdin-path property is
+      not specified, stdout-path should be assumed
+      to define the input device.
+
+  stdin-path:
+    type: string
+    required: false
+    description: >
+      A string that specifies the full path to the node
+      representing the device to be used for boot
+      console input. If the character “:” is present
+      in the value it terminates the path. The value
+      may be an alias.
+

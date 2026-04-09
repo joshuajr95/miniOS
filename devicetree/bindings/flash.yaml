@@ -1,0 +1,15 @@
+# DT binding for /flash nodes
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: April 7, 2026
+
+
+title: Binding for the /flash node
+
+properties:
+
+  reg:
+    type: array
+    required: true
+    description: The base address and memory size of the flash memory for program or boot code
+    
