@@ -85,10 +85,9 @@ represented by the @ref TerminalNode subclass of this class.
 class ParseTreeNode:
 
 
-    def __init__(self, type: NodeType, parent, lineNumber, isTerminal: bool = False):
+    def __init__(self, type: NodeType, parent, lineNumber):
         self.type = type
         self.parent = parent
-        self.isTerminal = isTerminal
         self.children: List[ParseTreeNode] = []
         self.lineNumber = lineNumber    # first line at which the node appears
 
@@ -147,13 +146,12 @@ value associated with it since it is composed of terminals that do.
 class TerminalNode(ParseTreeNode):
 
 
-    def __init__(self, type: NodeType, parent, lineNumber, terminalType: TerminalType, value: str):
-        super().__init__(type, parent, lineNumber, True)
+    def __init__(self, parent, lineNumber, terminalType: TerminalType, value: str):
+        super().__init__(NodeType.TERMINAL, parent, lineNumber)
         self.terminalType = terminalType
         self.value = value
 
         assert len(self.children) == 0
-
 
 
     def output(self, indentLevel):
@@ -263,7 +261,7 @@ class RecursiveDescentParser:
             self.lookAheadBuffer[self.lookAhead] = self.tokenizer.getNextToken()
 
         # REMOVE
-        print(self.lookAheadBuffer[0])
+        # print(self.lookAheadBuffer[0])
 
         # return first entry in the lookahead buffer
         return self.lookAheadBuffer[0]
@@ -286,7 +284,7 @@ class RecursiveDescentParser:
         self.currentParseTreeNode = currentNode
 
         if self.currentToken.type == TokenType.AMPERSAND:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.AMPERSAND, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.AMPERSAND, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \"&\".\n{self.getCurrentLine()}")
@@ -295,7 +293,7 @@ class RecursiveDescentParser:
 
         if (self.currentToken.type == TokenType.HEX_NUMBER_NO_PREFIX_OR_LABEL_OR_NODE_OR_PROPERTY) or \
             (self.currentToken.type == TokenType.LABEL_OR_NODE_OR_PROPERTY_NAME):
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.NODE_LABEL, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.NODE_LABEL, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected node label.\n{self.getCurrentLine()}")
@@ -303,28 +301,7 @@ class RecursiveDescentParser:
         self.currentToken = self.getNextToken()
         self.currentParseTreeNode = self.currentParseTreeNode.parent
 
-    def parseStringOrStringArray(self):
 
-        while self.currentToken.type != TokenType.SEMICOLON:
-            if self.currentToken.type == TokenType.STRING:
-                newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.STRING, self.currentToken.value)
-                self.currentParseTreeNode.addChild(newNode)
-
-                self.currentToken = self.getNextToken()
-
-                if self.currentToken.type == TokenType.COMMA:
-                    newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.COMMA, self.currentToken.value)
-                    self.currentParseTreeNode.addChild(newNode)
-                    self.currentToken = self.getNextToken()
-                elif self.currentToken.type == TokenType.SEMICOLON:
-                    pass
-                else:
-                    raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected ',' or ';'.\n{self.getCurrentLine()}")
-            else:
-                raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected string.\n{self.getCurrentLine()}")
-
-
-    # TODO: Fix this because should not mix hex/decimal numbers and phandle references
     def parsePropertyValueArray(self):
 
         if self.currentToken is None:
@@ -336,7 +313,7 @@ class RecursiveDescentParser:
         self.currentParseTreeNode = currentNode
 
         if self.currentToken.type == TokenType.LEFT_ANGLE_BRACKET:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.LEFT_ANGLE_BRACKET, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.LEFT_ANGLE_BRACKET, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \"<\".\n{self.getCurrentLine()}")
@@ -346,12 +323,12 @@ class RecursiveDescentParser:
         while self.currentToken.type != TokenType.RIGHT_ANGLE_BRACKET:
 
             if (self.currentToken.type == TokenType.HEXADECIMAL_NUMBER) or (self.currentToken.type == TokenType.HEX_NUMBER_NO_PREFIX_OR_LABEL_OR_NODE_OR_PROPERTY):
-                newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.HEXADECIMAL_NUMBER, self.currentToken.value)
+                newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.HEXADECIMAL_NUMBER, self.currentToken.value)
                 self.currentParseTreeNode.addChild(newNode)
                 self.currentToken = self.getNextToken()
 
             elif self.currentToken.type == TokenType.DECIMAL_NUMBER:
-                newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.DECIMAL_NUMBER, self.currentToken.value)
+                newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.DECIMAL_NUMBER, self.currentToken.value)
                 self.currentParseTreeNode.addChild(newNode)
                 self.currentToken = self.getNextToken()
 
@@ -362,7 +339,7 @@ class RecursiveDescentParser:
                 raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected one of: number, hexadecimal number, \"&\".\n{self.getCurrentLine()}")
 
 
-        newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.RIGHT_ANGLE_BRACKET, self.currentToken.value)
+        newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.RIGHT_ANGLE_BRACKET, self.currentToken.value)
         self.currentParseTreeNode.addChild(newNode)
 
         self.currentToken = self.getNextToken()
@@ -386,10 +363,9 @@ class RecursiveDescentParser:
         while self.currentToken.type != TokenType.SEMICOLON:
 
             if self.currentToken.type == TokenType.STRING:
-                self.parseStringOrStringArray()
-
-            elif self.currentToken.type == TokenType.AMPERSAND:
-                self.parsePhandleReference()
+                newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.STRING, self.currentToken.value)
+                self.currentParseTreeNode.addChild(newNode)
+                self.currentToken = self.getNextToken()
 
             elif self.currentToken.type == TokenType.LEFT_ANGLE_BRACKET:
                 self.parsePropertyValueArray()
@@ -397,9 +373,12 @@ class RecursiveDescentParser:
             else:
                 raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected one of: string, \"&\", \"<\" but received token of type {self.currentToken.type.name}. Token value: {self.currentToken.value}\n{self.getCurrentLine()}")
 
-            #self.currentToken = self.getNextToken()
 
-        #self.currentToken = self.getNextToken()
+            if self.currentToken.type == TokenType.COMMA:
+                newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.COMMA, self.currentToken.value)
+                self.currentParseTreeNode.addChild(newNode)
+                self.currentToken = self.getNextToken()
+
         self.currentParseTreeNode = self.currentParseTreeNode.parent
 
 
@@ -413,14 +392,14 @@ class RecursiveDescentParser:
         self.currentParseTreeNode = currentNode
 
         if self.currentToken.type == TokenType.HASHTAG:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.HASHTAG, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.HASHTAG, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
             self.currentToken = self.getNextToken()
 
 
         if (self.currentToken.type == TokenType.NODE_OR_PROPERTY_NAME) or (self.currentToken.type == TokenType.LABEL_OR_NODE_OR_PROPERTY_NAME) \
             or (self.currentToken.type == TokenType.HEX_NUMBER_NO_PREFIX_OR_LABEL_OR_NODE_OR_PROPERTY):
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.PROPERTY_NAME, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.PROPERTY_NAME, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected node property name.\n{self.getCurrentLine()}")
@@ -428,14 +407,14 @@ class RecursiveDescentParser:
         self.currentToken = self.getNextToken()
 
         if self.currentToken.type == TokenType.EQUALS:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.EQUALS, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.EQUALS, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
             self.currentToken = self.getNextToken()
             self.parseNodePropertyValue()
 
 
         if self.currentToken.type == TokenType.SEMICOLON:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.SEMICOLON, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.SEMICOLON, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \";\".\n{self.getCurrentLine()}")
@@ -455,7 +434,7 @@ class RecursiveDescentParser:
 
         if (self.currentToken.type == TokenType.HEX_NUMBER_NO_PREFIX_OR_LABEL_OR_NODE_OR_PROPERTY) or \
             (self.currentToken.type == TokenType.LABEL_OR_NODE_OR_PROPERTY_NAME):
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.NODE_LABEL, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.NODE_LABEL, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected node label.\n{self.getCurrentLine()}")
@@ -464,7 +443,7 @@ class RecursiveDescentParser:
 
 
         if self.currentToken.type == TokenType.COLON:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.COLON, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.COLON, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \":\".\n{self.getCurrentLine()}")
@@ -485,7 +464,7 @@ class RecursiveDescentParser:
 
 
         if self.currentToken.type == TokenType.AT_SYMBOL:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.AT_SYMBOL, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.AT_SYMBOL, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \"@\".\n{self.getCurrentLine()}")
@@ -495,12 +474,12 @@ class RecursiveDescentParser:
 
 
         if self.currentToken.type == TokenType.DECIMAL_NUMBER:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.DECIMAL_NUMBER, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.DECIMAL_NUMBER, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
 
         elif (self.currentToken.type == TokenType.HEXADECIMAL_NUMBER) or \
             (self.currentToken.type == TokenType.HEX_NUMBER_NO_PREFIX_OR_LABEL_OR_NODE_OR_PROPERTY):
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.HEXADECIMAL_NUMBER, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.HEXADECIMAL_NUMBER, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected number. Token: {str(self.currentToken)}.\n{self.getCurrentLine()}")
@@ -524,7 +503,7 @@ class RecursiveDescentParser:
 
         if (self.currentToken.type == TokenType.HEX_NUMBER_NO_PREFIX_OR_LABEL_OR_NODE_OR_PROPERTY) or \
             (self.currentToken.type == TokenType.LABEL_OR_NODE_OR_PROPERTY_NAME) or (self.currentToken.type == TokenType.NODE_OR_PROPERTY_NAME):
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.NODE_NAME, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.NODE_NAME, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
             self.currentToken = self.getNextToken()
         else:
@@ -549,7 +528,7 @@ class RecursiveDescentParser:
         self.parseNodeDeclaration()
 
         if self.currentToken.type == TokenType.LEFT_CURLY_BRACE:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.LEFT_CURLY_BRACE, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.LEFT_CURLY_BRACE, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \"{{\".\n{self.getCurrentLine()}")
@@ -558,7 +537,7 @@ class RecursiveDescentParser:
         self.parseNodeBody()
 
         if self.currentToken.type == TokenType.RIGHT_CURLY_BRACE:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.RIGHT_CURLY_BRACE, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.RIGHT_CURLY_BRACE, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \"}}\".\n{self.getCurrentLine()}")
@@ -566,7 +545,7 @@ class RecursiveDescentParser:
         self.currentToken = self.getNextToken()
 
         if self.currentToken.type == TokenType.SEMICOLON:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.SEMICOLON, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.SEMICOLON, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \";\".\n{self.getCurrentLine()}")
@@ -620,7 +599,7 @@ class RecursiveDescentParser:
 
         # check for forward slash
         if self.currentToken.type == TokenType.FORWARD_SLASH:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.FORWARD_SLASH, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.FORWARD_SLASH, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing file {self.filePath} at line {self.getLineNumber()}. Expected \"/\".\n{self.getCurrentLine()}")
@@ -629,7 +608,7 @@ class RecursiveDescentParser:
 
         # check for { after /
         if self.currentToken.type == TokenType.LEFT_CURLY_BRACE:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.LEFT_CURLY_BRACE, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.LEFT_CURLY_BRACE, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing file {self.filePath} at line {self.getLineNumber()}. Expected \"{{\".\n{self.getCurrentLine()}")
@@ -641,7 +620,7 @@ class RecursiveDescentParser:
 
         # get the closing brace
         if self.currentToken.type == TokenType.RIGHT_CURLY_BRACE:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.RIGHT_CURLY_BRACE, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.RIGHT_CURLY_BRACE, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing file {self.filePath} at line {self.getLineNumber()}. Expected \"}}\".\n{self.getCurrentLine()}")
@@ -649,7 +628,7 @@ class RecursiveDescentParser:
         self.currentToken = self.getNextToken()
 
         if self.currentToken.type == TokenType.SEMICOLON:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.SEMICOLON, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.SEMICOLON, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing file {self.filePath} at line {self.getLineNumber()}. Expected \";\".\n{self.getCurrentLine()}") 
@@ -676,7 +655,7 @@ class RecursiveDescentParser:
             self.parsePhandleReference()
 
         if self.currentToken.type == TokenType.LEFT_CURLY_BRACE:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.LEFT_CURLY_BRACE, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.LEFT_CURLY_BRACE, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \"{{\".\n{self.getCurrentLine()}")
@@ -685,10 +664,18 @@ class RecursiveDescentParser:
         self.parseNodeBody()
 
         if self.currentToken.type == TokenType.RIGHT_CURLY_BRACE:
-            newNode: TerminalNode = TerminalNode(NodeType.TERMINAL, self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.RIGHT_CURLY_BRACE, self.currentToken.value)
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.RIGHT_CURLY_BRACE, self.currentToken.value)
             self.currentParseTreeNode.addChild(newNode)
         else:
             raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \"}}\".\n{self.getCurrentLine()}")
+
+        self.currentToken = self.getNextToken()
+
+        if self.currentToken.type == TokenType.SEMICOLON:
+            newNode: TerminalNode = TerminalNode(self.currentParseTreeNode, self.currentToken.lineNumber, TerminalType.SEMICOLON, self.currentToken.value)
+            self.currentParseTreeNode.addChild(newNode)
+        else:
+            raise ParseError(f"Error in parsing device tree file {self.filePath} at line {self.getLineNumber()}. Expected \";\".\n{self.getCurrentLine()}")
 
         self.currentToken = self.getNextToken()
         self.currentParseTreeNode = self.currentParseTreeNode.parent
@@ -818,17 +805,69 @@ def getDTPropertyValueNode(node: ParseTreeNode):
 
 
 
+
 '''
 Gets the actual value (not the parse tree node) from
-a given DT node property given that it has type <string>
-or <string-array>. This should be used with caution and
+a given DT node property given that it has type
+<boolean>. This should be used with caution and
+one should check that the property has type string before
+invoking this function.
+
+THIS FUNCTION ALWAYS RETURNS TRUE SINCE THE MERE PRESENCE
+OF A BOOLEAN PROPERTY INDICATES A 'TRUE' VALUE. THIS FUNCTION
+IS MOSTLY HERE FOR UNIFORMITY OF THE INTERFACE TO GET NODE
+PROPERTY VALUES.
+
+@param node: ParseTreeNode of type NODE_PROPERTY.
+@return True
+'''
+def getDTPropertyValueBoolean(node: ParseTreeNode) -> bool:
+
+    if node.type != NodeType.NODE_PROPERTY:
+        raise Exception(f"getDTPropertyValueStringArray called on parse tree node of type {node.type.name} at line {node.lineNumber}")
+
+    # the mere presence of the property indicates a 'True' value
+    return True
+
+
+'''
+Gets the actual value (not the parse tree node) from
+a given DT node property given that it has type
+<string>. This should be used with caution and
 one should check that the property has type string before
 invoking this function.
 
 @param node: ParseTreeNode of type NODE_PROPERTY.
-@return List of strings representing the 'compatible' drivers
+@return String representing value
 '''
-def getDTPropertyStringArray(node: ParseTreeNode) -> List[str]:
+def getDTPropertyValueString(node: ParseTreeNode) -> str:
+
+    if node.type != NodeType.NODE_PROPERTY:
+        raise Exception(f"getDTPropertyValueStringArray called on parse tree node of type {node.type.name} at line {node.lineNumber}")
+
+    prop = getDTPropertyValueNode(node)
+
+    if prop is None:
+        raise Exception(f"getDTPropertyValueStringArray called on DT property {getDTPropertyName(node)} at line {node.lineNumber} that has empty value")
+
+    for child in prop.children:
+        if (child.type == NodeType.TERMINAL) and (child.terminalType == TerminalType.STRING):
+            return child.value
+    
+    return None
+
+
+'''
+Gets the actual value (not the parse tree node) from
+a given DT node property given that it has type
+<string-array>. This should be used with caution and
+one should check that the property has type string-array before
+invoking this function.
+
+@param node: ParseTreeNode of type NODE_PROPERTY.
+@return List of strings representing the property value
+'''
+def getDTPropertyValueStringArray(node: ParseTreeNode) -> List[str]:
 
     if node.type != NodeType.NODE_PROPERTY:
         raise Exception(f"getDTPropertyValueStringArray called on parse tree node of type {node.type.name} at line {node.lineNumber}")
@@ -846,8 +885,17 @@ def getDTPropertyStringArray(node: ParseTreeNode) -> List[str]:
     return strings
 
 
+'''
+Gets the actual value (not the parse tree node) from
+a given DT node property given that it has type
+<array>. This should be used with caution and
+one should check that the property has type array before
+invoking this function.
 
-def getDTPropertyPVArray(node: ParseTreeNode):
+@param node: ParseTreeNode of type NODE_PROPERTY.
+@return List of integers representing the property value
+'''
+def getDTPropertyValuePhandleArray(node: ParseTreeNode):
 
     if node.type != NodeType.NODE_PROPERTY:
         raise Exception(f"getDTPropertyPVArray called on parse tree node of type {node.type.name} at line {node.lineNumber}")
@@ -858,15 +906,151 @@ def getDTPropertyPVArray(node: ParseTreeNode):
         raise Exception(f"getDTPropertyPVArray called on DT property {getDTPropertyName(node)} at line {node.lineNumber} that has empty value")
 
     for child in prop.children:
-        if (child.type == NodeType.TERMINAL) and ((child.terminalType == TerminalType.DECIMAL_NUMBER) or (child.terminalType == TerminalType.HEXADECIMAL_NUMBER)):
-            pvArray.append(child)
-        elif child.type == NodeType.PHANDLE_REFERENCE:
-            pvArray.append(child.children[1])
+        if child.type == NodeType.PROPERTY_VALUE_ARRAY:
+            for grandchild in child.children:
+                if (grandchild.type == NodeType.TERMINAL) and ((grandchild.terminalType == TerminalType.DECIMAL_NUMBER) or (grandchild.terminalType == TerminalType.HEXADECIMAL_NUMBER)):
+                    pvArray.append(grandchild.value)
+                elif grandchild.type == NodeType.PHANDLE_REFERENCE:
+                    pvArray.append(grandchild.children[1].value)
+                else:
+                    raise Exception(f"getDTPropertyPhandleArray")
 
     return pvArray
 
-def getDTPropertyPhandleRef(node: ParseTreeNode):
-    raise Exception(f"getDTPropertyPhandleRef not implemented")
+
+
+'''
+Gets the actual value (not the parse tree node) from
+a given DT node property given that it has type
+<array>. This should be used with caution and
+one should check that the property has type array before
+invoking this function.
+
+@param node: ParseTreeNode of type NODE_PROPERTY.
+@return List of integers representing the property value
+'''
+def getDTPropertyValueIntArray(node: ParseTreeNode):
+
+    if node.type != NodeType.NODE_PROPERTY:
+        raise Exception(f"getDTPropertyIntArray called on parse tree node of type {node.type.name} at line {node.lineNumber}")
+
+    intArray = []
+    prop = getDTPropertyValueNode(node)
+    if prop is None:
+        raise Exception(f"getDTPropertyIntArray called on DT property {getDTPropertyName(node)} at line {node.lineNumber} that has empty value")
+
+    for child in prop.children:
+        if child.type == NodeType.PROPERTY_VALUE_ARRAY:
+            for grandchild in child.children:
+                if (grandchild.type == NodeType.TERMINAL) and ((grandchild.terminalType == TerminalType.DECIMAL_NUMBER) or (grandchild.terminalType == TerminalType.HEXADECIMAL_NUMBER)):
+                    intArray.append(grandchild.value)
+                elif (grandchild.type == NodeType.TERMINAL) and ((grandchild.terminalType == TerminalType.LEFT_ANGLE_BRACKET) or (grandchild.terminalType == TerminalType.RIGHT_ANGLE_BRACKET)):
+                    pass
+                else:
+                    raise Exception(f"getDTPropertyIntArray called on property node whose type is not array")
+
+    return intArray
+
+
+
+
+'''
+Gets the actual value (not the parse tree node) from
+a given DT node property given that it has type
+<int>. This should be used with caution and
+one should check that the property has type int before
+invoking this function.
+
+@param node: ParseTreeNode of type NODE_PROPERTY.
+@return List of integers representing the property value
+'''
+def getDTPropertyValueInt(node: ParseTreeNode):
+
+    if node.type != NodeType.NODE_PROPERTY:
+        raise Exception(f"getDTPropertyIntArray called on parse tree node of type {node.type.name} at line {node.lineNumber}")
+
+    prop = getDTPropertyValueNode(node)
+    if prop is None:
+        raise Exception(f"getDTPropertyIntArray called on DT property {getDTPropertyName(node)} at line {node.lineNumber} that has empty value")
+
+    for child in prop.children:
+        if child.type == NodeType.PROPERTY_VALUE_ARRAY:
+            for grandchild in child.children:
+                if (grandchild.type == NodeType.TERMINAL) and ((grandchild.terminalType == TerminalType.DECIMAL_NUMBER) or (grandchild.terminalType == TerminalType.HEXADECIMAL_NUMBER)):
+                    return grandchild.value
+                elif (grandchild.type == NodeType.TERMINAL) and ((grandchild.terminalType == TerminalType.LEFT_ANGLE_BRACKET) or (grandchild.terminalType == TerminalType.RIGHT_ANGLE_BRACKET)):
+                    pass
+                else:
+                    raise Exception(f"getDTPropertyIntArray called on property {getDTPropertyName(node)} node whose type is not int")
+
+    return None
+
+
+
+'''
+Gets the actual value (not the parse tree node) from
+a given DT node property given that it has type
+<phandle>. This should be used with caution and
+one should check that the property has type phandle before
+invoking this function.
+
+@param node: ParseTreeNode of type NODE_PROPERTY.
+@return Phandle (label of another node) representing the property value
+'''
+def getDTPropertyValuePhandle(node: ParseTreeNode):
+    if node.type != NodeType.NODE_PROPERTY:
+        raise Exception(f"getDTPropertyValuePhandle called on parse tree node of type {node.type.name} at line {node.lineNumber}")
+
+    prop = getDTPropertyValueNode(node)
+    if prop is None:
+        raise Exception(f"getDTPropertyValuePhandle called on DT property {getDTPropertyName(node)} at line {node.lineNumber} that has empty value")
+
+    for child in prop.children:
+        if child.type == NodeType.PROPERTY_VALUE_ARRAY:
+            for grandchild in child.children:
+                if grandchild.type == NodeType.PHANDLE_REFERENCE:
+                    return grandchild.children[1].value
+                elif (grandchild.type == NodeType.TERMINAL) and ((grandchild.terminalType == TerminalType.LEFT_ANGLE_BRACKET) or (grandchild.terminalType == TerminalType.RIGHT_ANGLE_BRACKET)):
+                    pass
+                else:
+                    raise Exception(f"getDTPropertyValuePhandle called on property node whose type is not array")
+
+    return None
+
+
+
+
+'''
+Gets the actual value (not the parse tree node) from
+a given DT node property given that it has type
+<phandles> (multiple). This should be used with caution and
+one should check that the property has type phandles before
+invoking this function.
+
+@param node: ParseTreeNode of type NODE_PROPERTY.
+@return Phandle list (label of another node) representing the property value
+'''
+def getDTPropertyValueMultiPhandle(node: ParseTreeNode):
+    if node.type != NodeType.NODE_PROPERTY:
+        raise Exception(f"getDTPropertyValuePhandle called on parse tree node of type {node.type.name} at line {node.lineNumber}")
+
+    prop = getDTPropertyValueNode(node)
+    if prop is None:
+        raise Exception(f"getDTPropertyValuePhandle called on DT property {getDTPropertyName(node)} at line {node.lineNumber} that has empty value")
+
+    phandles = []
+    for child in prop.children:
+        if child.type == NodeType.PROPERTY_VALUE_ARRAY:
+            for grandchild in child.children:
+                if grandchild.type == NodeType.PHANDLE_REFERENCE:
+                    phandles.append(grandchild.children[1].value)
+                elif (grandchild.type == NodeType.TERMINAL) and ((grandchild.terminalType == TerminalType.LEFT_ANGLE_BRACKET) or (grandchild.terminalType == TerminalType.RIGHT_ANGLE_BRACKET)):
+                    pass
+                else:
+                    raise Exception(f"getDTPropertyValuePhandle called on property node whose type is not array")
+
+    return None
+
 
 
 '''
@@ -891,35 +1075,33 @@ def getDTNodeDeclaration(node: ParseTreeNode):
 
 
 '''
-Gets the node name for a given node definition. This is returned as a string,
-and since nodes may have the same name but different unit addresses, it will
-append the unit address (and '@' symbol) to the end of the name to distinguish
-it from other nodes with the same name but different unit address. Does not
-include the label, since that is returned by @ref getDTNodeLabel. Can only
-be passed a ParseTreeNode of type NODE_DEFINITION.
+Gets the node name for a given node definition. This is returned as a string.
+Can only be passed a ParseTreeNode of type NODE_DEFINITION.
 
 @param node: ParseTreeNode representing the node definition.
 @return string representing the name of the node with the unit address appended.
 '''
 def getDTNodeName(node: ParseTreeNode):
 
-    if node.type != NodeType.NODE_DEFINITION:
+    if (node.type != NodeType.NODE_DEFINITION) and (node.type != NodeType.ROOT_NODE_DEFINITION) and (node.type != NodeType.PHANDLE_OVERRIDE):
         raise Exception(f"getDTNodeName called on parse tree node with type {node.type.name} at line {node.lineNumber}")
+
+    if node.type == NodeType.ROOT_NODE_DEFINITION:
+        return "/"
+
+    if node.type == NodeType.PHANDLE_OVERRIDE:
+        if node.children[0].type == NodeType.PHANDLE_REFERENCE:
+            return node.children[0].children[0].value + node.children[0].children[1].value
+        else:
+            raise Exception(f"Node of type PHANDLE_OVERRIDE does not appear to have proper format")
 
     nodeDeclaration = getDTNodeDeclaration(node)
 
-    name = ""
     for child in nodeDeclaration.children:
         if (child.type == NodeType.TERMINAL) and (child.terminalType == TerminalType.NODE_NAME):
-            name = name + str(child.value)
-        if child.type == NodeType.NODE_ADDRESS:
-            for terminal in child.children:
-                name = name + str(terminal.value)
+            return str(child.value)
 
-    if name == "":
-        raise Exception(f"getDTNodeName called on parse tree node that does not appear to have a name.")
-
-    return name
+    return None
 
 
 
@@ -980,7 +1162,7 @@ NODE_DEFINITION.
 '''
 def getDTNodeBody(node: ParseTreeNode):
     
-    if (node.type != NodeType.NODE_DEFINITION) and (node.type != NodeType.ROOT_NODE_DEFINITION):
+    if (node.type != NodeType.NODE_DEFINITION) and (node.type != NodeType.ROOT_NODE_DEFINITION) and (node.type != NodeType.PHANDLE_OVERRIDE):
         raise Exception(f"getDTNodeBody called on device tree node with type {node.type.name} at line {node.lineNumber}")
 
     for child in node.children:
@@ -1005,9 +1187,9 @@ list and False if it should not be included.
                    included in the output list, and False otherwise
 @return List[ParseTreeNode] of all properties found satisfying filterFunc
 '''
-def getDTNodeProperties(node: ParseTreeNode, filterFunc = lambda x: True):
-    
-    if (node.type != NodeType.NODE_DEFINITION) and (node.type != NodeType.ROOT_NODE_DEFINITION):
+def getDTNodeProperties(node: ParseTreeNode, filterFunc = lambda x: True) -> list[ParseTreeNode]:
+
+    if (node.type != NodeType.NODE_DEFINITION) and (node.type != NodeType.ROOT_NODE_DEFINITION) and (node.type != NodeType.PHANDLE_OVERRIDE):
         raise Exception(f"getDTNodeProperties called on device tree node with type {node.type.name} at line {node.lineNumber}")
 
     nodeBody = getDTNodeBody(node)
@@ -1034,9 +1216,9 @@ to returning true for all nodes.
                    and False otherwise.
 @return List[ParseTreeNode] of all sub-nodes found satisfying filterFunc
 '''
-def getDTNodeSubNodes(node: ParseTreeNode, filterFunc = lambda x: True):
+def getDTNodeSubNodes(node: ParseTreeNode, filterFunc = lambda x: True) -> list[ParseTreeNode]:
 
-    if node.type != NodeType.NODE_DEFINITION and (node.type != NodeType.ROOT_NODE_DEFINITION):
+    if (node.type != NodeType.NODE_DEFINITION) and (node.type != NodeType.ROOT_NODE_DEFINITION) and (node.type != NodeType.PHANDLE_OVERRIDE):
         raise Exception(f"getDTNodeSubNodes called on device tree node with type {node.type.name} at line {node.lineNumber}")
 
     nodeBody = getDTNodeBody(node)
@@ -1053,7 +1235,8 @@ def getDTNodeSubNodes(node: ParseTreeNode, filterFunc = lambda x: True):
 
 
 '''
-Gets a property node with a given name
+Gets a property node with a given name. This function must
+be passed a ParseTreeNode with type NODE_DEFINITION
 
 @param node: ParseTreeNode representing the node definition
 @param name: String representing the name of the property to find
@@ -1164,6 +1347,18 @@ def getDTPhandleOverrideBody(node: ParseTreeNode):
             return child
 
     return None
+
+
+
+def getDTPhandleOverrideLabel(node: ParseTreeNode):
+
+    if node.type != NodeType.PHANDLE_OVERRIDE:
+        raise Exception(f"Function getDTPhandleOverrideLabel passed node of type {node.type.name} at line {node.lineNumber}. Expected node of type PHANDLE_OVERRIDE.")
+
+    if node.children[0].type != NodeType.PHANDLE_REFERENCE:
+        raise Exception(f"Phandle override node does not appear to have phandle reference")
+    
+    return node.children[0].children[1].value
 
 
 '''
