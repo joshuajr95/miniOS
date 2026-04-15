@@ -821,13 +821,13 @@ PROPERTY VALUES.
 @param node: ParseTreeNode of type NODE_PROPERTY.
 @return True
 '''
-def getDTPropertyValueBoolean(node: ParseTreeNode) -> bool:
+def getDTPropertyValueBoolean(node: ParseTreeNode) -> str:
 
     if node.type != NodeType.NODE_PROPERTY:
         raise Exception(f"getDTPropertyValueStringArray called on parse tree node of type {node.type.name} at line {node.lineNumber}")
 
     # the mere presence of the property indicates a 'True' value
-    return True
+    return "true"
 
 
 '''

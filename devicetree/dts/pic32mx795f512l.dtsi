@@ -13,6 +13,10 @@
         stdout-path = "/soc/uart2:115200";
     };
 
+    aliases {
+        console = <&uart2>;
+    };
+
 
     cpus {
         #address-cells = <1>;
@@ -93,6 +97,7 @@
             compatible = "microchip,pic32mx-uart";
             reg = <0xbf806000 0x200>;
             status = "disabled";
+            hw-flow-control;
             interrupt-parent = <&intcon>;
             interrupts = <26 0 27 0 28 0>;
         };
@@ -101,6 +106,7 @@
             compatible = "microchip,pic32mx-uart";
             reg = <0xbf806800 0x200>;
             status = "disabled";
+            hw-flow-control;
             interrupt-parent = <&intcon>;
             interrupts = <37 0 38 0 39 0>;
         };
@@ -109,6 +115,7 @@
             compatible = "microchip,pic32mx-uart";
             reg = <0xbf806400 0x200>;
             status = "disabled";
+            hw-flow-control;
             interrupt-parent = <&intcon>;
             interrupts = <40 0 41 0 42 0>;
         };

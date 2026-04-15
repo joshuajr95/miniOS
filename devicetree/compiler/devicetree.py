@@ -347,8 +347,10 @@ class DeviceTreeBuilder:
 
         # check for missing required properties
         for propertyName in bindingPropertiesDictionary.keys():
-            if bindingPropertiesDictionary[propertyName]["required"] and propertyName not in nodePropertyNames:
-                raise Exception(f"Required property '{propertyName}' for node '{getDTNodeName(self.currentParseTreeNode)}' is not found")
+            if bindingPropertiesDictionary[propertyName]["required"] and propertyName not in nodePropertyNames and bindingPropertiesDictionary[propertyName]["type"] == "boolean":
+                self.currentDeviceTreeNode.setProperty(propertyName, DTNodeProperty(propertyName, DTNodePropertyType.BOOLEAN, "false"))
+            elif bindingPropertiesDictionary[propertyName]["required"] and propertyName not in nodePropertyNames:
+                raise Exception(f"Required property '{propertyName}' for node '{self.currentDeviceTreeNode.name}' is not found")
 
 
         for subNode in self.currentDeviceTreeNode.children:
@@ -407,88 +409,7 @@ class DeviceTreeBuilder:
                     raise Exception(f"Property '{propertyName}' in device tree node '{getDTNodeName(node)}' has value {actualPropertyValue.value} but expected one of <{', '.join(expectedPropertyValueArray)}> from binding")
 
 
-    # def handlePhandleOverrideNodeBody(self):
 
-    #     nodePropertiesList = getDTNodeProperties(self.currentParseTreeNode)
-    #     if duplicatePropertiesExist(nodePropertiesList):
-    #         raise Exception(f"Duplicate properties exist in device tree node {getDTNodeName(self.currentParseTreeNode)}")
-
-    #     binding = None
-    #     if self.currentDeviceTreeNode.hasProperty("compatible"):
-    #         compatibleStrings = self.currentDeviceTreeNode.getProperty("compatible")
-    #         binding = self.matchCompatibleToBinding(compatibleStrings)
-
-    #         if binding is None:
-    #             raise Exception(f"nodeBinding is None. There does not appear to be a matching binding for compatible '{self.currentDeviceTreeNode.getProperty('compatible').value}'.")
-
-    #     else:
-    #         nodeName = self.currentDeviceTreeNode.name
-    #         binding = self.getBindingFromNodeName(nodeName)
-    #         if binding is None:
-    #             raise Exception(f"nodeBinding is None. There does not appear to be a matching binding for node '{self.currentDeviceTreeNode.name}'")
-
-    #     self.validateNodeWithBinding(self.currentParseTreeNode, binding)
-
-
-    #     for property in nodePropertiesList:
-    #         propertyName = getDTPropertyName(property)
-
-    #         if (propertyName.startswith("#")) and (propertyName.split("-")[-1] == "cells") and (propertyName != "#address-cells") and (propertyName != "#size-cells"):
-    #             self.deviceTree.specifierSpaces.add(propertyName.split("-")[0][1:])
-
-    #         propertyValue = generatePropertyValue(property)
-    #         self.currentDeviceTreeNode.setProperty(propertyName, propertyValue)
-
-
-    #     subNodes = getDTNodeSubNodes(self.currentParseTreeNode)
-
-    #     if len(subNodes) > 0 and ( (not self.currentDeviceTreeNode.hasProperty("#address-cells")) or (not self.currentDeviceTreeNode.hasProperty("#size-cells")) ):
-    #         pass # TODO: add warning that node with children does not have #address-cells and/or #size-cells
-
-    #     for subNode in subNodes:
-
-    #         subNodeName = getDTNodeName(subNode)
-    #         subNodeUnitAddress = getDTNodeUnitAddress(subNode)
-
-    #         existingNode = None
-    #         for dtSubNode in self.currentDeviceTreeNode.children:
-    #             if (dtSubNode.name == subNodeName) and (dtSubNode.unitAddress = subNodeUnitAddress):
-    #                 existingNode = dtSubNode
-
-    #         # existing DT node found in device tree already built
-    #         if existingNode is not None:
-
-    #             # save the current device tree node and current parse tree node before making recursive call
-    #             currentDeviceTreeNodeSave = self.currentDeviceTreeNode
-    #             self.currentDeviceTreeNode = existingNode
-    #             currentParseTreeNodeSave = self.currentParseTreeNode
-    #             self.currentParseTreeNode = subNode
-
-    #             # since node has already been created, call function to modify existing node rather than create new one
-    #             self.handlePhandleOverrideNodeBody()
-
-    #             self.currentParseTreeNode = currentParseTreeNodeSave
-    #             self.currentDeviceTreeNode = currentDeviceTreeNodeSave
-
-    #         else:
-
-    #             # save the current parse tree node before creating new sub-node
-    #             currentParseTreeNodeSave = self.currentParseTreeNode
-    #             self.currentParseTreeNode = subNode
-    #             self.handleNodeDefinition()
-    #             self.currentParseTreeNode = currentParseTreeNodeSave
-
-
-
-    # TODO: get phandle override label from parse tree
-    # TODO: use label to index into device tree label map and get corresponding device tree node
-    # TODO: set that node to be current device tree node
-    # TODO: get that node's compatible
-    # TODO: load the corresponding binding
-    # TODO: get all properties in phandle override (possibly fix getDTNodeProperties function)
-    # TODO: for each property, look it up in binding and validate it, then override it in the current device tree node
-    # TODO: get all subnodes (possibly fix getDTNodeSubNodes function)
-    # TODO: call handleNodeBodyOverride to handle overriding subnodes (subnodes cannot be added, and must throw an error if non-existent) <-- NO!, what about adding device to i2c bus on particular board
     def handlePhandleOverride(self):
 
         phandleLabel = getDTPhandleOverrideLabel(self.currentParseTreeNode)
@@ -510,10 +431,10 @@ class DeviceTreeBuilder:
 
             if propertyType == DTNodePropertyType.PHANDLE:
                 propertyValue = getDTPropertyValuePhandle(property)
-                self.deviceTree.aliases[propertyName] = propertyValue
+                self.deviceTree.aliases[propertyName] = DTNodeProperty(propertyName, propertyType, propertyValue)
             elif propertyType == DTNodePropertyType.STRING:
                 propertyValue = getDTPropertyValueString(property)
-                self.deviceTree.aliases[propertyName] = propertyValue
+                self.deviceTree.aliases[propertyName] = DTNodeProperty(propertyName, propertyType, propertyValue)
             else:
                 raise Exception(f"Properties in 'aliases' node must have types STRING or PHANDLE, but encountered property '{propertyName}' with type {propertyType.name}")
 
@@ -534,10 +455,10 @@ class DeviceTreeBuilder:
 
             if propertyType == DTNodePropertyType.PHANDLE:
                 propertyValue = getDTPropertyValuePhandle(property)
-                self.deviceTree.chosen[propertyName] = propertyValue
+                self.deviceTree.chosen[propertyName] = DTNodeProperty(propertyName, propertyType, propertyValue)
             elif propertyType == DTNodePropertyType.STRING:
                 propertyValue = getDTPropertyValueString(property)
-                self.deviceTree.chosen[propertyName] = propertyValue
+                self.deviceTree.chosen[propertyName] = DTNodeProperty(propertyName, propertyType, propertyValue)
             else:
                 raise Exception(f"Properties in 'chosen' node must have types STRING or PHANDLE, but encountered property '{propertyName}' with type {propertyType.name}")
 
@@ -739,6 +660,7 @@ class DeviceTreeBuilder:
             self.currentParseTreeNode = node
             self.handlePhandleOverride()
 
+        self.currentDeviceTreeNode = self.deviceTree.root
         self.checkDeviceTreeForMissingProperties()
 
 

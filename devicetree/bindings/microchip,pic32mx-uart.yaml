@@ -34,4 +34,8 @@ properties:
     required: true
     description: The array of IRQ numbers and flags used by this node.
 
+  hw-flow-control:
+    type: boolean
+    required: true
+    description: Whether this UART device uses the RTS and CTS hardware flow control signals
 
