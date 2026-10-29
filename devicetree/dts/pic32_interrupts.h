@@ -1,0 +1,12 @@
+/*
+ * This file defines the interrupt flag format for PIC32 microcontrollers
+ */
+
+
+#define NUM_INTERRUPTS 96
+
+#define IRQ_TYPE_EDGE_RISING     1
+#define IRQ_TYPE_EDGE_FALLING    2
+#define IRQ_TYPE_LEVEL_HIGH      4
+#define IRQ_TYPE_LEVEL_LOW       8
+

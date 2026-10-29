@@ -7,6 +7,8 @@ from typing import List
 from tokenizer import Tokenizer, Token, TokenType
 from parser import RecursiveDescentParser, ParseError
 from devicetree import *
+from generate_macro_database import *
+from preprocessor import *
 
 
 
@@ -32,24 +34,31 @@ def runCompilerCore(inputFile, outputFile=None):
     
     fileString: str = getFileContents(inputFile)
 
+    preprocessor = Preprocessor(".")
 
+    preprocessor.preprocess(inputFile)
+    preprocessor.writeToOutputFile("boards/explorer_16_32_preproc.dts")
 
     #####################
     # Run the Tokenizer #
     #####################
 
-    tokenList: List[Token] = []
-    tokenizer: Tokenizer = Tokenizer(fileString)
 
-    
-    parser: RecursiveDescentParser = RecursiveDescentParser(tokenizer, inputFile, lookAhead=1)
 
-    parser.parseDeviceTree()
+    # tokenizer: Tokenizer = Tokenizer(fileString)
 
-    parseTree = parser.getParseTree()
-    DTBuilder = DeviceTreeBuilder(parseTree)
-    DTBuilder.buildDeviceTree()
-    deviceTree = DTBuilder.deviceTree.print()
+
+    # parser: RecursiveDescentParser = RecursiveDescentParser(tokenizer, inputFile, lookAhead=1)
+
+    # parser.parseDeviceTree()
+
+    # parseTree = parser.getParseTree()
+    # DTBuilder : DeviceTreeBuilder = DeviceTreeBuilder(parseTree)
+    # DTBuilder.buildDeviceTree()
+    # dbGenerator = MacroDatabaseGenerator("compiler/devicetree_database.h", DTBuilder.deviceTree)
+    # dbGenerator.generateDatabase()
+
+    #DTBuilder.deviceTree.print()
     #parseTree.output()
     
 

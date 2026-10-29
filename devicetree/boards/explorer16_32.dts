@@ -1,0 +1,57 @@
+/*
+ * This file is the Device Tree source file for the
+ * Explorer 16/32 Development Board by Microchip for
+ * its PIC32 family of microcontrollers
+ */
+
+
+// hello, this is a single-line comment
+
+#include <pic32mx795f512l.dtsi>
+#include <pic32_gpio.h>
+
+
+/ {
+    soc {
+        led3: led {
+            gpios = <&porta 0 GPIO_ACTIVE_HIGH>;
+        };
+
+        led4: led {
+            gpios = <&porta 1 GPIO_ACTIVE_HIGH>;
+        };
+
+        led5: led {
+            gpios = <&porta 2 GPIO_ACTIVE_HIGH>;
+        };
+
+        led6: led {
+            gpios = <&porta 3 GPIO_ACTIVE_HIGH>;
+        };
+
+        led7: led {
+            gpios = <&porta 4 GPIO_ACTIVE_HIGH>;
+        };
+
+        led8: led {
+            gpios = <&porta 5 GPIO_ACTIVE_HIGH>;
+        };
+
+        led9: led {
+            gpios = <&porta 6 GPIO_ACTIVE_HIGH>;
+        };
+
+        led10: led {
+            gpios = <&porta 7 GPIO_ACTIVE_HIGH>;
+        };
+    };
+};
+
+
+TEST_MACRO(32);
+TEST_MACRO2();
+
+&uart2 {
+    status = "okay";
+};
+

@@ -1,0 +1,39 @@
+# DT binding for PIC32MX GPIO controller
+#
+# Author: Joshua Jacobs-Rebhun
+# Date: April 14, 2026
+
+
+title: 
+
+compatible: "microchip,pic32mxl-gpio"
+
+
+properties:
+
+  reg:
+    type: array
+    required: true
+    description: Base address and memory size of memory-mapped register block
+
+  gpio-controller:
+    type: boolean
+    required: true
+    description: Marks this node as a GPIO controller
+
+  "#gpio-cells":
+    type: int
+    required: true
+    description: Number of 32-bit cells used to describe the GPIOs. The value must be 2, since one is the GPIO number and the other is flags
+    const: 2
+
+  status:
+    type: string
+    required: true
+    description: Status of the node
+    enum:
+      - "okay"
+      - "disabled"
+      - "fail"
+
+

@@ -1,3 +1,10 @@
+/*
+ * This file implements the Device Tree hardware
+ * description for the PIC32MX795F512L microcontroller.
+ */
+
+
+#include <pic32_interrupts.h>
 
 
 / {
@@ -146,10 +153,6 @@
     };
 };
 
-
-&uart2 {
-    status = "okay";
-};
 
 
 
